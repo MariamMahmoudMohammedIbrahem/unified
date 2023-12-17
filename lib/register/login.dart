@@ -1,3 +1,5 @@
+
+import 'package:azan/data/mobileData.dart';
 import 'package:azan/feedback/feedback1.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,6 +23,7 @@ class _LogInState extends State<LogIn> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           TextFormField(
             controller: emailUserController,
@@ -90,33 +93,41 @@ class _LogInState extends State<LogIn> {
               password = value;
             },
           ),
+          Visibility(visible: notFound, child: Text('The email is not found'),),
           ElevatedButton(
             onPressed: () async {
               try {
                 final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(email: emailUser, password: password);
-                print('email1 $emailUser');
+                // print('email1 $emailUser');
                 if (userCredential != null) {
-                  final userSnapshot = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: emailUser).get();
-                  print('pass $password');
+                  setState(() {
+                    notFound = false;
+                  });
+                  final userSnapshot = await FirebaseFirestore.instance.collection('users').where('user email', isEqualTo: emailUser).get();
+                  // print('pass $password');
                   print('$userSnapshot');
                   if (userSnapshot.docs.isNotEmpty) {
-                    final username = userSnapshot.docs.first.id; // Username is the document ID
-                    // Use the username as needed...
-                    print('Username: $username');
-                    Navigator.push(context,MaterialPageRoute(builder: (context)=>FeedbackRegister(name: username,)));
+                    final username = userSnapshot.docs.first.id;
+                    // print('Username: $username');
+                    Navigator.push(context,MaterialPageRoute(builder: (context)=>MobileData(name: username,)));
                   } else {
-                    // Handle if user not found in Firestore
+                    setState(() {
+                      notFound = true;
+                    });
+
                   }
                 }
               } on FirebaseAuthException catch (e) {
                 // Handle FirebaseAuthException
+                print('Firebase Auth Error: ${e.code}'); // Print the error code
+                print('Firebase Auth Error Message: ${e.message}');
               } catch (e) {
                 // Handle other exceptions
+                print('Other Error: $e');
               }
             },
             child: const Text('Login'),
-          )
-
+          ),
           // ElevatedButton(
           //   onPressed: () async {
           //     try {

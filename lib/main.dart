@@ -1,4 +1,5 @@
 import 'package:azan/feedback/feedback1.dart';
+import 'package:azan/register/register.dart';
 import 'package:azan/register/signup.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
