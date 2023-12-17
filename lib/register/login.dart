@@ -1,6 +1,7 @@
 
 import 'package:azan/data/mobileData.dart';
 import 'package:azan/feedback/feedback1.dart';
+import 'package:azan/register/resetPassword.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -128,51 +129,13 @@ class _LogInState extends State<LogIn> {
             },
             child: const Text('Login'),
           ),
-          // ElevatedButton(
-          //   onPressed: () async {
-          //     try {
-          //       final user = await FirebaseAuth.instance.signInWithEmailAndPassword(email: emailUser, password: password);
-          //       if (user != null ) {
-          //         final docsIDs = await FirebaseFirestore.instance.collection('users').get().then(
-          //                 (value) => value.docs.map((e) => e.id).toList());
-          //         if(docsIDs.contains(password)){}
-          //         else {}
-          //       }
-          //     } on FirebaseAuthException catch (e) {
-          //       if (e.code == 'user-not-found') {
-          //         showDialog(
-          //             context: context,
-          //             builder: (context) {
-          //               return AlertDialog(
-          //                 content: Text(
-          //                   'No user found for that email.',
-          //                   style: TextStyle(
-          //                       color: Colors.red
-          //                   ),),
-          //               );
-          //             }
-          //         );
-          //       } else if (e.code == 'wrong-password') {
-          //         showDialog(
-          //             context: context,
-          //             builder: (context) {
-          //               return AlertDialog(
-          //                 content: Text(
-          //                   'Wrong password provided for that user.',
-          //                   style: TextStyle(
-          //                       color: Colors.red
-          //                   ),),
-          //               );
-          //             }
-          //         );
-          //       }
-          //     }
-          //     catch (e) {
-          //       print(e);
-          //     }
-          //   },
-          //   child: const Text('Login',),
-          // ),
+          TextButton(
+            onPressed: (){
+              Navigator.push(context,MaterialPageRoute(builder: (context)=>const ResetPassword()));
+            },
+            child: const Text('forget password?',style: TextStyle(color: Colors.red),
+            ),
+          ),
         ],
       ),
     );

@@ -20,7 +20,7 @@ class _SignUpState extends State<SignUp> {
   final passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
   late String email;
-  late String userName;
+  late String userName = '';
   late String password;
   void initState() {
     super.initState();
@@ -87,9 +87,18 @@ class _SignUpState extends State<SignUp> {
                 ),
               ),
               onChanged:(value){
-                  userName = value;
+                setState(() {
+                  if(usersIDs.contains(value)){
+                    userConfirm = true;
+                  }
+                  else{
+                    userConfirm = false;
+                    userName = value;
+                  }
+                });
               },
             ),
+            Visibility(visible:userConfirm ,child: Text('this username is in use',style: TextStyle(color: Colors.red),)),
             TextFormField(
               controller: passwordController,
               keyboardType: TextInputType.text,

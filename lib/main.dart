@@ -1,4 +1,5 @@
 import 'package:azan/feedback/feedback1.dart';
+import 'package:azan/register/login.dart';
 import 'package:azan/register/register.dart';
 import 'package:azan/register/signup.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -24,7 +25,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const SignUp(),
+      home: const LogIn(),
     );
   }
 }

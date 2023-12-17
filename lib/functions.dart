@@ -48,17 +48,17 @@ void getLocationData() async {
 }
 void getDocumentIDs() async {
   try {
+    QuerySnapshot users = await FirebaseFirestore.instance.collection('users').get();
     QuerySnapshot Cities = await FirebaseFirestore.instance.collection('Cities').get();
     QuerySnapshot Mosques = await FirebaseFirestore.instance.collection('Mosques').get();
     if (Cities.docs.isNotEmpty) {
       citiesIDs = Cities.docs.map((doc) => doc.id).toList();
-    } else {
-      print('No cities found');
     }
     if (Mosques.docs.isNotEmpty) {
       mosquesIDs = Mosques.docs.map((doc) => doc.id).toList();
-    } else {
-      print('No mosques found');
+    }
+    if (users.docs.isNotEmpty) {
+      usersIDs = users.docs.map((doc) => doc.id).toList();
     }
   } catch (e) {
     print('Error retrieving documents: $e');

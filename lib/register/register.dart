@@ -115,17 +115,14 @@ class _RegisterState extends State<Register> {
               height: 55,
               child: PopupMenuButton<String>(
                 onSelected: (String value) async {
-                  setState(() {
+                  setState(() async {
                     // Handle the selected value
                     area= value;
-                  });
-                  // get the mosques of the selected city only
-                  QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Cities').doc(value).collection('Mosques').get();
-                  if (querySnapshot.docs.isNotEmpty) {
-                    setState(() {
+                    QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Cities').doc(value).collection('Mosques').get();
+                    if (querySnapshot.docs.isNotEmpty) {
                       mosquesIDs = querySnapshot.docs.map((doc) => doc.id).toList();
-                    });
-                  }
+                    }
+                  });
                 },
                 itemBuilder: (BuildContext context) {
                   final List<PopupMenuEntry<String>> items = [];
@@ -353,9 +350,10 @@ class _RegisterState extends State<Register> {
                       // 'connect time':getCurrentDateTime(),
                       'sheikh name': sheikhName,
                     });
-                await FirebaseFirestore.instance.collection('Cities').doc(area).set(
+                await FirebaseFirestore.instance.collection('Mosques').add(
                     {
-                      area:'',
+                      'mosque':mosque,
+                      'city':area,
                       'connect time':getCurrentDateTime(),
                       'sheikh name': sheikhName,
                     });
