@@ -115,7 +115,6 @@ class _LogInState extends State<LogIn> {
                     setState(() {
                       notFound = true;
                     });
-
                   }
                 }
               } on FirebaseAuthException catch (e) {

@@ -74,3 +74,36 @@ String? validatePhoneNumber(String? value) {
   // You can add more complex validation logic here if needed
   return null; // Return null if the input is valid
 }
+Future<void> getUserFields(String userId) async {
+  QuerySnapshot querySnapshot = await firestore.collection('users').get();
+  //get fields
+  if (querySnapshot.docs.isNotEmpty) {
+    testIDs = querySnapshot.docs.map((doc) => doc.id).toList();
+    for(String id in testIDs){
+      if(id.endsWith(userId)) {
+        DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).get();
+        if (userSnapshot.exists) {
+          Map<String, dynamic>? userData = userSnapshot.data() as Map<String, dynamic>?;
+          if (userData != null && userData.isNotEmpty) {
+            sheikhName = userData['sheikh name'];
+            sheikhPhone = userData['sheikh phone'];
+            email = userData['user email'];
+          }
+        }
+      }
+    }
+  }
+  QuerySnapshot userSubcollection = await firestore.collection('users').doc(userId).collection('Cities').get();
+  userMosquesIDs = userSubcollection.docs.map((doc) => doc.id).toList();
+  for(String id in userMosquesIDs){
+    DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).collection('Cities').doc(id).get();
+    if (userSnapshot.exists) {
+      Map<String, dynamic>? userData = userSnapshot.data() as Map<String, dynamic>?;
+      if (userData != null && userData.isNotEmpty) {
+        area = id;
+        mosque = userData['mosque'];
+      }
+    }
+
+  }
+}
