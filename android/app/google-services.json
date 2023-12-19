@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "255799660604",
+    "project_id": "azan-eoip",
+    "storage_bucket": "azan-eoip.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:255799660604:android:fc0da8186f3dc5b72f3339",
+        "android_client_info": {
+          "package_name": "com.example.azan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrld4b59Wu-X3Z_Tu26nQJDuDRqIVios0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
