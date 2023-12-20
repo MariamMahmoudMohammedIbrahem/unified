@@ -15,12 +15,11 @@ class FeedbackRegister extends StatefulWidget {
 }
 
 class _FeedbackRegisterState extends State<FeedbackRegister> {
-  final _fireStore = FirebaseDatabase.instance;
   final controllerName = TextEditingController();
   final controllerArea = TextEditingController();
   final controllerNote = TextEditingController();
   late String selectedOption = '';
-  late String msg;
+  late String msg = '';
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -134,16 +133,15 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
               ),
               onChanged: (value){
                 setState(() {
-
+                  msg = value;
                 });
-                msg = value;
               },
             ),
             // store data
             ElevatedButton(
               onPressed: ()async{
                 try{
-                  await FirebaseFirestore.instance.collection('users').doc(widget.name).update(
+                  await FirebaseFirestore.instance.collection('users').doc(widget.name).collection('feedback').add(
                       {
                         'problem': selectedOption,
                         'msg': msg,

@@ -22,7 +22,7 @@ class _ResetPasswordState extends State<ResetPassword> {
       showDialog(
           context: context,
           builder: (context) {
-            return AlertDialog(
+            return const AlertDialog(
               content: Text('Password reset link sent! check your email'),
             );
           }
@@ -54,9 +54,9 @@ class _ResetPasswordState extends State<ResetPassword> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                   horizontal: 20, vertical: 5),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.all(Radius.circular(20)),
               ),
@@ -96,16 +96,16 @@ class _ResetPasswordState extends State<ResetPassword> {
               ),
             ),
 
-            SizedBox(height: 10,),
-            Container(
+            const SizedBox(height: 10,),
+            SizedBox(
               width: width*.2,
               child: ElevatedButton(
                   style:ElevatedButton.styleFrom(
                     elevation: 26,
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       vertical: 15,
                     ),
-                    shape: RoundedRectangleBorder(
+                    shape: const RoundedRectangleBorder(
                       side: BorderSide(color: Colors.grey),
                       borderRadius:
                       BorderRadius.all(Radius.circular(20)),
@@ -113,9 +113,8 @@ class _ResetPasswordState extends State<ResetPassword> {
                     backgroundColor: Colors.white,
                   ),
                   onPressed: passwordReset,
-                  child: Text(
+                  child: const Text(
                     'Reset Password',
-                    style: TextStyle(color: Colors.green.shade100),
                   )
               ),
             ),

@@ -18,11 +18,15 @@ var sheikhNumberController = TextEditingController();
 var userEmailController = TextEditingController();
 var mosqueController = TextEditingController();
 var areaController = TextEditingController();
+String updatedArea = '';
+String updatedMosque = '';
 class _AccountEditState extends State<AccountEdit> {
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    updatedArea = area;
+    updatedMosque = mosque;
     userNameController =
         TextEditingController(text: widget.name);
     sheikhNameController =
@@ -60,23 +64,28 @@ class _AccountEditState extends State<AccountEdit> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             //letter photo
-            Container(
-              width: 100,
-              height: 100,
-              decoration: const BoxDecoration(
-                color: Colors.grey,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 40,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: const BoxDecoration(
+                    color: Colors.grey,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 40,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
             //username
             const Text('Username'),
@@ -189,14 +198,14 @@ class _AccountEditState extends State<AccountEdit> {
                 height: 55,
                 child: PopupMenuButton<String>(
                   onSelected: (String value) async {
-                    setState(() async {
+                    setState(() {
                       // Handle the selected value
-                      area= value;
-                      QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Cities').doc(value).collection('Mosques').get();
-                      if (querySnapshot.docs.isNotEmpty) {
-                        mosquesIDs = querySnapshot.docs.map((doc) => doc.id).toList();
-                      }
+                      updatedArea = value;
                     });
+                    QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Cities').doc(value).collection('Mosques').get();
+                    if (querySnapshot.docs.isNotEmpty) {
+                      mosquesIDs = querySnapshot.docs.map((doc) => doc.id).toList();
+                    }
                   },
                   itemBuilder: (BuildContext context) {
                     final List<PopupMenuEntry<String>> items = [];
@@ -257,7 +266,7 @@ class _AccountEditState extends State<AccountEdit> {
                                 ),
                                 onChanged:(value)async{
                                   setState(() {
-                                    areaController.text = value;
+                                    updatedArea = value;
                                   });
                                 },
                               ),
@@ -279,7 +288,7 @@ class _AccountEditState extends State<AccountEdit> {
                       children: [
                         Expanded(
                           child: Text(
-                            areaController.text,
+                            updatedArea,
                             style: const TextStyle(
                               color: Colors.grey,
                               fontWeight: FontWeight.bold,
@@ -287,7 +296,7 @@ class _AccountEditState extends State<AccountEdit> {
                             ),
                           ),
                         ),
-                        Icon(Icons.arrow_drop_down),
+                        const Icon(Icons.arrow_drop_down),
                       ],
                     ),
                   ),
@@ -304,7 +313,7 @@ class _AccountEditState extends State<AccountEdit> {
                   onSelected: (String value) {
                     setState(() {
                       // Handle the selected value
-                      mosqueController.text = value;
+                      updatedMosque = value;
                     });
                   },
                   itemBuilder: (BuildContext context) {
@@ -366,7 +375,7 @@ class _AccountEditState extends State<AccountEdit> {
                                 ),
                                 onChanged:(value){
                                   setState(() {
-                                    mosqueController.text = value;
+                                    updatedMosque = value;
                                   });
                                 },
                               ),
@@ -388,7 +397,7 @@ class _AccountEditState extends State<AccountEdit> {
                       children: [
                         Expanded(
                           child: Text(
-                            mosqueController.text,
+                            updatedMosque,
                             style: const TextStyle(
                               color: Colors.grey,
                               fontWeight: FontWeight.bold,
@@ -396,7 +405,7 @@ class _AccountEditState extends State<AccountEdit> {
                             ),
                           ),
                         ),
-                        Icon(Icons.arrow_drop_down),
+                        const Icon(Icons.arrow_drop_down),
                       ],
                     ),
                   ),
@@ -473,9 +482,122 @@ class _AccountEditState extends State<AccountEdit> {
                 },
                 child: const Text('Update',),
             ),
-            ElevatedButton(onPressed: (){}, child: Text('update cities'),),
-            ElevatedButton(onPressed: (){}, child: Text('update mosques in cities'),),
-            ElevatedButton(onPressed: (){}, child: Text('update mosques'),),
+            ElevatedButton(
+              onPressed: ()async{
+                //check if city name is changed or mosque name is changed
+                if(updatedArea != area || updatedMosque != mosque && updatedArea.isNotEmpty && updatedMosque.isNotEmpty){
+                  //check if the city is in the database
+                  if(citiesIDs.contains(updatedArea) && updatedArea.isNotEmpty){
+                    //if mosque is in city
+                    for(String mosque in mosquesIDs){
+                      if (mosque.endsWith(updatedMosque)){
+                        //update sheikhname
+                        if(sheikhNameController.text != sheikhName){
+                          FirebaseFirestore.instance.collection('Cities').doc(updatedArea).collection('Mosques').doc(updatedMosque).update(
+                              {'sheikh name':sheikhNameController.text,});
+                        }
+                      }
+                      //else add the mosque
+                      else{
+                        FirebaseFirestore.instance.collection('Cities').doc(updatedArea).collection('Mosques').doc(updatedMosque).set(
+                            {'sheikh name':sheikhNameController.text,});
+                      }
+                    }
+                  }
+                  //add the city and add the mosque
+                  else{
+                    FirebaseFirestore.instance.collection('Cities').doc(updatedArea).collection(updatedMosque);
+                  }
+                }
+              },
+              child: const Text('update cities and mosques in cities'),
+            ),
+            ElevatedButton(
+              onPressed: ()async{
+                //if field('mosque') != mosquecontroler.text()
+                if(updatedMosque != mosque && updatedMosque.isNotEmpty){
+                  //reset sheikh name in previous mosque
+                  final printingData = await FirebaseFirestore.instance.collection('Mosques').where('mosque',isEqualTo:mosque).where('city',isEqualTo: updatedArea).get();
+                  //reset sheikh name
+                  if(printingData.docs.isNotEmpty){
+                    printingData.docs.forEach((doc) async{
+                      try{
+                        DocumentReference docRef = FirebaseFirestore.instance.collection('Mosques').doc(doc.id);
+                        await docRef.update({
+                          'sheikh name': '',
+                          'connect time': getCurrentDateTime(),
+                        });
+                      }
+                      catch(e){
+                        print('got a problem $e');
+                      }
+                    });
+                  }
+                  //if new mosque is in the database => update the sheikh name in mosque
+                  final inDatabase = await FirebaseFirestore.instance.collection('Mosques').where('mosque',isEqualTo: updatedMosque).where('city',isEqualTo: updatedArea).get();
+                  if(inDatabase.docs.isNotEmpty){
+                    inDatabase.docs.forEach((doc)async{
+                      try{
+                        DocumentReference docRef = FirebaseFirestore.instance.collection('Mosques').doc(doc.id);
+                        await docRef.update({
+                          'sheikh name': '',
+                          'connect time':getCurrentDateTime(),
+                        });
+                      }
+                      catch(e){
+                        print('got a problem $e');
+                      }
+                    });
+                  }
+                  //else if the new mosque isn't fount in the database
+                  else{
+                    FirebaseFirestore.instance.collection('Mosques').add({
+                      'city':updatedArea,
+                      'connect time':getCurrentDateTime(),
+                      'mosque':updatedMosque,
+                      'sheikh name':sheikhNameController.text,
+                    });
+                  }
+                }
+                else{
+
+                }
+              },
+              child: const Text('update mosques'),),
+            ElevatedButton(
+              onPressed: () async {
+                //update collection in users
+                if(area != updatedArea && updatedArea.isNotEmpty){
+                  if(mosque != updatedMosque && updatedMosque.isNotEmpty){
+                    FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(area).delete().then((value) => FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(updatedArea).set(
+                        {'mosque':updatedMosque,}));
+                  }
+                  else{
+                    DocumentSnapshot currentDocSnapshot = await FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(area).get();
+                    // Check if the current document exists
+                    if (currentDocSnapshot.exists) {
+                      // Get the data from the current document
+                      Map<String, dynamic> data = currentDocSnapshot.data() as Map<String, dynamic>;
+
+                      // Create a new document with the new ID and set the data
+                      await FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(updatedArea).set(data);
+
+                      // Optionally, delete the old document
+                      await FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(updatedArea).delete();
+
+                    }
+                  }
+                }
+                else{
+                  if(mosque != updatedMosque && updatedMosque.isNotEmpty){
+                    // FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(area).delete().then((value) => );
+                    FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(updatedArea).update(
+                        {'mosque':updatedMosque,});
+                  }
+                }
+              }, 
+              child: const Text('update cities and mosques in users'),
+            ),
         ]
         ),
       ));
