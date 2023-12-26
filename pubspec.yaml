@@ -39,9 +39,12 @@ dependencies:
   firebase_database: ^10.3.8
   cupertino_icons: ^1.0.2
   cloud_firestore: ^4.13.6
+  functional_data: ^1.1.1
+  provider: ^6.1.1
   intl: ^0.19.0
   location: ^5.0.3
   flutter_reactive_ble: ^5.2.0
+  fluttertoast: ^8.2.4
 
 dev_dependencies:
   flutter_test:
