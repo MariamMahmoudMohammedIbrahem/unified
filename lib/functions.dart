@@ -6,15 +6,14 @@ import 'package:intl/intl.dart';
 import 'constants.dart';
 
 String getCurrentDateTime() {
-  DateTime now = DateTime.now();
-  String formattedDate = DateFormat('yyyy-MM-dd').format(now);
-  String formattedTime = DateFormat('HH:mm:ss').format(now);
+  now = DateTime.now();
+  formattedDate = DateFormat('dd / MM / yyyy').format(now);
+  formattedTime = DateFormat('HH:mm').format(now);
 
   print('Current Date: $formattedDate');
   print('Current Time: $formattedTime');
   return '$formattedTime / $formattedDate';
 }
-
 
 void getLocationData() async {
   Location location = Location();
@@ -45,6 +44,20 @@ void getLocationData() async {
   double? latitude = _locationData.latitude;
   double? longitude = _locationData.longitude;
   print('Latitude: $latitude, Longitude: $longitude');
+}
+num convertToInt(List<int> data, int start, int size) {
+  final buffer = List<int>.filled(size, 0);
+  int converted = 0;
+
+  for (var i = start, j = 0; i < start + size && j < size; i++, j++) {
+    buffer[j] = data[i];
+  }
+
+  for (var i = 0; i < buffer.length; i++) {
+    converted += buffer[i] << (8 * (size - i - 1));
+  }
+
+  return converted;
 }
 void getDocumentIDs() async {
   try {

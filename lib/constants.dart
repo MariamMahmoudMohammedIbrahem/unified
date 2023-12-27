@@ -1,6 +1,16 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:intl/intl.dart';
+
+final ble = FlutterReactiveBle();
+String deviceName = '';
+// late var deviceId;
+//time calculation
+DateTime now = DateTime.now();
+String formattedDate = DateFormat('yyyy-MM-dd').format(now);
+String formattedTime = DateFormat('HH:mm:ss').format(now);
 
 bool showPassword = true;
 bool emailConfirm = false;
@@ -25,15 +35,32 @@ late StreamSubscription<QuerySnapshot> citiesSubscription;
 //ble constants
 bool connected = false;
 late List<int> subscribeOutput;
-int year = 0;
-int month = 0;
-int day = 0;
-int hour = 0;
-int minute = 0;
-int second = 0;
+//date/time data from ble
+num year = 0;
+num month = 0;
+num day = 0;
+num hour = 0;
+num minute = 0;
+num second = 0;
 List<int> dateList = [];
+//location data from ble
+late num latitude;
+late num longitude;
 List<int> locationList = [];
+//pray times data from ble
+late num fajrHour;
+late num fajrMinute;
+late num duhrHour;
+late num duhrMinute;
+late num asrHour;
+late num asrMinute;
+late num maghrebHour;
+late num maghrebMinute;
+late num ishaHour;
+late num ishaMinute;
 List<int> prayList = [];
+//zone data from ble
+late num zone;
 List<int> zoneList = [];
 //get
 List<int> getDate = [0xAA, 0x02, 0x00, 0x02, 0xAA];
@@ -53,4 +80,6 @@ List<int> restart = [0xAA, 0x0F, 0x00, 0x0F, 0xAA];
 List<int> success = [0xAA, 0x11, 0x00, 0x11, 0xAA];
 List<int> sizeError = [0xAA, 0x33, 0x00, 0x33, 0xAA];
 List<int> crcError = [0xAA, 0x22, 0x00, 0x22, 0xAA];
-String dateTime = '';
+//check sum calculation
+num checkSum = 0;
+num sum = 0;

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:azan/ble/reactive_state.dart';
+import 'package:azan/constants.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 class BleDeviceConnector extends ReactiveState<ConnectionStateUpdate> {
@@ -28,9 +29,12 @@ class BleDeviceConnector extends ReactiveState<ConnectionStateUpdate> {
         _logMessage(
             'ConnectionState for device $deviceId : ${update.connectionState}');
         _deviceConnectionController.add(update);
+        connected = true;
       },
-      onError: (Object e) =>
-          _logMessage('Connecting to device $deviceId resulted in error $e'),
+      onError: (Object e) {
+        _logMessage('Connecting to device $deviceId resulted in error $e');
+        connected = false;
+      }
     );
   }
 
@@ -38,8 +42,10 @@ class BleDeviceConnector extends ReactiveState<ConnectionStateUpdate> {
     try {
       _logMessage('disconnecting to device: $deviceId');
       await _connection.cancel();
+      connected = false;
     } on Exception catch (e, _) {
       _logMessage("Error disconnecting from a device: $e");
+      connected = true;
     } finally {
       // Since [_connection] subscription is terminated, the "disconnected" state cannot be received and propagated
       _deviceConnectionController.add(
