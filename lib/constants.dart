@@ -11,6 +11,7 @@ String deviceName = '';
 DateTime now = DateTime.now();
 String formattedDate = DateFormat('yyyy-MM-dd').format(now);
 String formattedTime = DateFormat('HH:mm:ss').format(now);
+const interval = Duration(seconds: 1);
 
 bool showPassword = true;
 bool emailConfirm = false;
@@ -34,6 +35,7 @@ late StreamSubscription<QuerySnapshot> citiesSubscription;
 
 //ble constants
 bool connected = false;
+bool connectionStatus = false;
 late List<int> subscribeOutput;
 //date/time data from ble
 num year = 0;
@@ -83,3 +85,6 @@ List<int> crcError = [0xAA, 0x22, 0x00, 0x22, 0xAA];
 //check sum calculation
 num checkSum = 0;
 num sum = 0;
+//Data Visibility
+bool locationContainer = false;
+bool prayContainer = false;

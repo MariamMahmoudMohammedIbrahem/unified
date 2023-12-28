@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:azan/ble/reactive_state.dart';
+import 'package:azan/constants.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:meta/meta.dart';
 
@@ -27,6 +28,7 @@ class BleScanner implements ReactiveState<BleScannerState> {
     _subscription?.cancel();
     _subscription =
         _ble.scanForDevices(withServices: serviceIds).listen((device) {
+          print('device name => ${device.name}');
           final knownDeviceIndex = _devices.indexWhere((d) => d.id == device.id);
           if (knownDeviceIndex >= 0) {
             _devices[knownDeviceIndex] = device;

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:azan/ble/ble_device_interactor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
@@ -15,16 +16,15 @@ part 'device_list.g.dart';
 
 //ignore_for_file: annotate_overrides
 
-
 class DeviceListScreen extends StatelessWidget {
   const DeviceListScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) =>
-      Consumer4<BleScanner, BleScannerState?, BleLogger, BleDeviceConnector>(
-        builder:
-            (_, bleScanner, bleScannerState, bleLogger, deviceConnector, __) =>
-                Connect(
+  Widget build(BuildContext context) => Consumer5<BleScanner, BleScannerState?,
+          BleLogger, BleDeviceConnector, BleDeviceInteractor>(
+        builder: (_, bleScanner, bleScannerState, bleLogger, deviceConnector,
+                interactor, __) =>
+            Connect(
           scannerState: bleScannerState ??
               const BleScannerState(
                 discoveredDevices: [],
@@ -33,6 +33,10 @@ class DeviceListScreen extends StatelessWidget {
           startScan: bleScanner.startScan,
           stopScan: bleScanner.stopScan,
           deviceConnector: deviceConnector,
+          writeWithoutResponse: interactor.writeCharacteristicWithoutResponse,
+          writeWithResponse: interactor.writeCharacteristicWithResponse,
+          readCharacteristic: interactor.readCharacteristic,
+          subscribeToCharacteristic: interactor.subScribeToCharacteristic,
         ),
       );
 }
@@ -66,11 +70,26 @@ class Connect extends StatefulWidget {
       required this.startScan,
       required this.stopScan,
       required this.deviceConnector,
+      required this.writeWithoutResponse,
+      required this.writeWithResponse,
+      required this.readCharacteristic,
+      required this.subscribeToCharacteristic,
       super.key});
   final BleScannerState scannerState;
   final void Function(List<Uuid>) startScan;
   final VoidCallback stopScan;
   final BleDeviceConnector deviceConnector;
+  final Future<void> Function(
+          QualifiedCharacteristic characteristic, List<int> value)
+      writeWithoutResponse;
+  final Future<void> Function(
+          QualifiedCharacteristic characteristic, List<int> value)
+      writeWithResponse;
+  final Future<List<int>> Function(QualifiedCharacteristic characteristic)
+      readCharacteristic;
+
+  final Stream<List<int>> Function(QualifiedCharacteristic characteristic)
+      subscribeToCharacteristic;
   @override
   State<Connect> createState() => _ConnectState();
 }
@@ -78,60 +97,38 @@ class Connect extends StatefulWidget {
 class _ConnectState extends State<Connect> {
   StreamSubscription<DiscoveredDevice>? _scanSubscription;
   String _deviceId = '';
-  void startScanning() {
-    setState(() {
-      widget.deviceConnector.disconnect(_deviceId);
-    });
-    _scanSubscription = ble.scanForDevices(
-      withServices: [],
-      scanMode: ScanMode.lowLatency,
-    ).listen((scanResult) {
-      setState(() {
-        deviceName = scanResult.name;
-      });
-      print('deviceName$deviceName');
-      if (scanResult.name.isNotEmpty) {
-        _deviceId = scanResult.id;
-        setState(() {
-          widget.deviceConnector.connect(scanResult.id);
-        });
-        stopScanning(); // Stop scanning when a device is found
-      }
-    });
+  // void startScanning() {
+  //   setState(() {
+  //     widget.deviceConnector.disconnect(_deviceId);
+  //   });
+  //   _scanSubscription = ble.scanForDevices(
+  //     withServices: [],
+  //     scanMode: ScanMode.lowLatency,
+  //   ).listen((scanResult) {
+  //     if (scanResult.name.isNotEmpty) {
+  //       deviceName = scanResult.name;
+  //       _deviceId = scanResult.id;
+  //       widget.deviceConnector.connect(scanResult.id);
+  //       stopScanning(); // Stop scanning when a device is found
+  //     }
+  //   });
+  // }
+
+  void _startScanning() {
+    widget.startScan([]);
   }
 
   void stopScanning() {
-    _scanSubscription?.cancel(); // Cancel the subscription to stop scanning
+    widget.stopScan();
   }
-
-  // void connectToDevice(String deviceId) {
-  //   print('in2');
-  //   ble
-  //       .connectToDevice(
-  //     id: deviceId,
-  //     connectionTimeout: const Duration(seconds: 10),
-  //   )
-  //       .listen((connectionState) {
-  //     print('in3');
-  //     if (connectionState.connectionState == DeviceConnectionState.connected) {
-  //       setState(() {
-  //         print('in4');
-  //         connected = true;
-  //         _deviceId = deviceId; // Set the connected device ID
-  //       });
-  //     }
-  //   }, onError: (dynamic error) {
-  //         connected = false;
-  //     print('Connection error: $error');
-  //   });
-  // }
 
   Future<void> writeData(List<int> value) async {
     if (_deviceId.isNotEmpty) {
       try {
         await ble.writeCharacteristicWithoutResponse(
           QualifiedCharacteristic(
-            characteristicId: Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+            characteristicId:
+                Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
             serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
             deviceId: _deviceId,
           ),
@@ -152,7 +149,7 @@ class _ConnectState extends State<Connect> {
   StreamSubscription<List<int>>? zoneSubscription;
   bool awaitingResponse = false;
   void resetDateSubscription(int dataType) {
-    switch(dataType){
+    switch (dataType) {
       case 1:
         dateSubscription?.cancel(); // Cancel the existing subscription
         dateSubscription = null; // Reset dateSubscription to null
@@ -171,6 +168,7 @@ class _ConnectState extends State<Connect> {
         break;
     }
   }
+
   void subscribeCharacteristic(int dataType) {
     Stream<List<int>> stream;
     switch (dataType) {
@@ -180,12 +178,12 @@ class _ConnectState extends State<Connect> {
         praySubscription?.pause();
         zoneSubscription?.pause();
         if (dateSubscription == null) {
-        print('in subscribe');
+          print('in subscribe');
           stream = _createSubscription();
           dateSubscription = stream.listen((event) {
             setState(() {
               print('1$event');
-              if(event.length == 11){
+              if (event.length == 11) {
                 dateList = List.from(event);
                 year = convertToInt(event, 3, 1);
                 month = convertToInt(event, 4, 1);
@@ -208,7 +206,7 @@ class _ConnectState extends State<Connect> {
           locationSubscription = stream.listen((event) {
             setState(() {
               print('2$event');
-              if(event.length == 13){
+              if (event.length == 13) {
                 locationList = List.from(event);
                 latitude = convertToInt(event, 3, 4);
                 longitude = convertToInt(event, 7, 4);
@@ -227,7 +225,7 @@ class _ConnectState extends State<Connect> {
           praySubscription = stream.listen((event) {
             setState(() {
               print('3$event');
-              if(event.length == 15){
+              if (event.length == 15) {
                 prayList = List.from(event);
                 fajrHour = convertToInt(event, 3, 1);
                 fajrMinute = convertToInt(event, 4, 1);
@@ -254,7 +252,7 @@ class _ConnectState extends State<Connect> {
           zoneSubscription = stream.listen((event) {
             setState(() {
               print('4$event');
-              if(event.length == 6){
+              if (event.length == 6) {
                 zoneList = List.from(event);
                 zone = convertToInt(event, 3, 1);
               }
@@ -268,83 +266,19 @@ class _ConnectState extends State<Connect> {
   Stream<List<int>> _createSubscription() {
     return ble
         .subscribeToCharacteristic(
-      QualifiedCharacteristic(
-        characteristicId: Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-        serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-        deviceId: _deviceId,
-      ),
-    )
+          QualifiedCharacteristic(
+            characteristicId:
+                Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+            serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+            deviceId: _deviceId,
+          ),
+        )
         .distinct()
         .asyncMap((event) async {
       // You can process event or modify data before updating the list
       return List<int>.from(event);
     });
   }
-  // void getDataAndSubscribe(int dataType, List<int> dataToWrite) {
-  //   StreamSubscription<List<int>>? currentSubscription;
-  //
-  //   switch (dataType) {
-  //     case 1:
-  //       currentSubscription = dateSubscription;
-  //       break;
-  //     case 2:
-  //       currentSubscription = locationSubscription;
-  //       break;
-  //     case 3:
-  //       currentSubscription = praySubscription;
-  //       break;
-  //     case 4:
-  //       currentSubscription = zoneSubscription;
-  //       break;
-  //   }
-  //
-  //   // Unpause the current subscription and pause others
-  //   dateSubscription?.pause();
-  //   locationSubscription?.pause();
-  //   praySubscription?.pause();
-  //   zoneSubscription?.pause();
-  //
-  //   if (currentSubscription == null) {
-  //     Stream<List<int>> stream = _createSubscription();
-  //     currentSubscription = stream.listen((event) {
-  //       setState(() {
-  //         switch (dataType) {
-  //           case 1:
-  //             dateList = List.from(event);
-  //             break;
-  //           case 2:
-  //             locationList = List.from(event);
-  //             break;
-  //           case 3:
-  //             prayList = List.from(event);
-  //             break;
-  //           case 4:
-  //             zoneList = List.from(event);
-  //             break;
-  //         }
-  //       });
-  //     });
-  //
-  //     switch (dataType) {
-  //       case 1:
-  //         dateSubscription = currentSubscription;
-  //         break;
-  //       case 2:
-  //         locationSubscription = currentSubscription;
-  //         break;
-  //       case 3:
-  //         praySubscription = currentSubscription;
-  //         break;
-  //       case 4:
-  //         zoneSubscription = currentSubscription;
-  //         break;
-  //     }
-  //   }
-  //
-  //   // Write data to the BLE device
-  //   writeData(dataToWrite);
-  // }
-
 
   void getAllDataAndSubscribe() async {
     List<Map<int, List<int>>> dataSets = [
@@ -373,30 +307,59 @@ class _ConnectState extends State<Connect> {
       }
     }
   }
+  void connect() {
+    for (var device in widget.scannerState.discoveredDevices) {
+      print('object => ${device.name}');
+      if (device.name == 'UNAZANEOIPV4') {
+        deviceName = device.name;
+        _deviceId = device.id;
+        print('Connecting to ${device.name}, id: ${device.id}');
+        widget.deviceConnector.connect(device.id);
+      }
+    }
+  }
+  void delay() async {
+    await Future.delayed(const Duration(seconds: 5));
+  }
 
   void initState() {
-    startScanning();
+    // _startScanning();//start scanning
+    // Future.delayed(const Duration(seconds: 5));//delay for scanning
+    // widget.stopScan(); // stop the scan
+    // connect(); //connect to the azan ble
+    // after connection subscribe then write
+    // getAllDataAndSubscribe();
+    // timer for calculating the time periodically
+    Timer.periodic(interval, (Timer t) {
+      setState(() {
+        if(!widget.scannerState.scanIsInProgress){
+          _startScanning();
+          Timer(const Duration(seconds: 5), () {
+            widget.stopScan();
+          });
+        }
+        else if (!connected){
+          connect();
+        }
+        else{
+          t.cancel();
+        }
+      });
+    });
     // setState(() {
     //   getCurrentDateTime();
     // });
     //timer
-    Timer.periodic(const Duration(seconds: 2), (Timer t) {
-      //if !connected startScanning
-      if(!connected){
-        startScanning();
-      }
-      //else get the data from the ble device
-      else{
-        subscribeCharacteristic(1);
-        writeData(getDate);
-      }
-      t.cancel();
-    });
-    //timer for calculating the time periodically
-    // Timer.periodic(const Duration(minutes: 1), (Timer t) {
-    //   setState(() {
-    //     getCurrentDateTime();
-    //   });
+    // Timer.periodic(const Duration(seconds: 2), (Timer t) {
+    //   //if !connected startScanning
+    //   if (!connected) {
+    //     startScanning();
+    //   }
+    //   //else get the data from the ble device
+    //   else {
+    //     getAllDataAndSubscribe();
+    //   }
+    //   t.cancel();
     // });
     super.initState();
   }
@@ -413,201 +376,258 @@ class _ConnectState extends State<Connect> {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
     return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Container(
-                width: width*.4,
-                height: height*.1,
+      body: ListView(children: [
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Container(
+                  width: width * .4,
+                  height: height * .1,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0),
+                    border: Border.all(
+                      width: 2,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: width * .05, vertical: width * .03),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.date_range_outlined),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Text(formattedDate),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.hourglass_bottom_outlined),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Text(formattedTime),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+                Container(
+                  width: width * .4,
+                  height: height * .1,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0),
+                    border: Border.all(
+                      width: 2,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: width * .05, vertical: width * .03),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.date_range_outlined),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Text('$day / $month / $year'),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.hourglass_bottom_outlined),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Text('$hour:$minute'),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                    onPressed: () async {
+                      _startScanning();
+                      await Future.delayed(const Duration(seconds: 5));
+                      widget.stopScan();
+                      connect();
+                    },
+                    child: const Text('scan')),
+                ElevatedButton(
+                  onPressed: getAllDataAndSubscribe,
+                  child: const Text('get all data'),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Text('Device Name: $deviceName'),
+                Icon(connected ? Icons.done_all : Icons.remove_done),
+              ],
+            ),
+            Padding(
+              padding:
+                  EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
+              child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20.0),
-                  border: Border.all(width: 2,color: Colors.grey,),
+                  border: Border.all(
+                    width: 2,
+                    color: Colors.grey,
+                  ),
                 ),
-                padding: EdgeInsets.symmetric(horizontal: width*.05, vertical: width*.03),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.date_range_outlined),
-                        const SizedBox(width: 5,),
-                        Text(formattedDate),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.hourglass_bottom_outlined),
-                        const SizedBox(width: 5,),
-                        Text(formattedTime),
-                      ],
-                    )
-                  ],
+                child: ListTile(
+                  title: const Text('Location'),
+                  trailing: const Icon(Icons.arrow_drop_down),
+                  onTap: () {
+                    setState(() {
+                      locationContainer = !locationContainer;
+                    });
+                  },
                 ),
               ),
-              Container(
-                width: width*.4,
-                height: height*.1,
+            ),
+            Visibility(
+              visible: locationContainer,
+              child: Column(
+                children: [
+                  Text('$locationList'),
+                ],
+              ),
+            ),
+            Padding(
+              padding:
+                  EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
+              child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20.0),
-                  border: Border.all(width: 2,color: Colors.grey,),
+                  border: Border.all(
+                    width: 2,
+                    color: Colors.grey,
+                  ),
                 ),
-                padding: EdgeInsets.symmetric(horizontal: width*.05, vertical: width*.03),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.date_range_outlined),
-                        const SizedBox(width: 5,),
-                        Text('$day / $month / $year'),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.hourglass_bottom_outlined),
-                        const SizedBox(width: 5,),
-                        Text('$hour:$minute'),
-                      ],
-                    )
-                  ],
+                child: ListTile(
+                  title: const Text('Prays Times'),
+                  trailing: const Icon(Icons.arrow_drop_down),
+                  onTap: () {
+                    setState(() {
+                      prayContainer = !prayContainer;
+                    });
+                  },
                 ),
               ),
-            ],
-          ),
-          ElevatedButton(
-              onPressed:(){
-                startScanning();
-                Future.delayed(const Duration(seconds: 5), () {
-                  stopScanning();
-                });
+            ),
+            Visibility(
+              visible: prayContainer,
+              child: Text('$prayList'),
+            ),
+            Text('$zoneList'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    writeData(getSound1);
+                  },
+                  child: const Text('sound 1'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    writeData(getSound2);
+                  },
+                  child: const Text('sound 2'),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    writeData(getSound3);
+                  },
+                  child: const Text('sound 3'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    writeData(getSound4);
+                  },
+                  child: const Text('sound 4'),
+                ),
+              ],
+            ),
+            const Text('Setting Data'),
+            ElevatedButton(
+              onPressed: () {
+                writeData(setDate);
               },
-              child: const Text('scan')),
-          ElevatedButton(onPressed: getAllDataAndSubscribe, child: const Text('get all data'),),
-          Row(
-            children: [
-              Text('Device Name: $deviceName'),
-              Icon(connected ? Icons.done_all : Icons.remove_done),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const Text(
-                'Time/Date',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
+              child: const Text(
+                'Date',
               ),
-              ElevatedButton(
-                onPressed: () {
-                  subscribeCharacteristic(1);
-                  writeData(getDate);
-                  print('press');
-                },
-                child: const Text('Get Date'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  // Write without response
+                  await widget.writeWithoutResponse(
+                    QualifiedCharacteristic(
+                      characteristicId:
+                          Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+                      serviceId:
+                          Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+                      deviceId: _deviceId,
+                    ),
+                    restart,
+                  );
+
+                  // Subscribe to characteristic
+                  await widget.subscribeToCharacteristic(
+                    QualifiedCharacteristic(
+                      characteristicId:
+                          Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+                      serviceId:
+                          Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+                      deviceId: _deviceId,
+                    ),
+                  );
+
+                  // Read characteristic
+                  // await widget.readCharacteristic(
+                  //   QualifiedCharacteristic(
+                  //     characteristicId:
+                  //         Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+                  //     serviceId:
+                  //         Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+                  //     deviceId: _deviceId,
+                  //   ),
+                  // );
+                } catch (error) {
+                  print('Error: $error');
+                }
+              },
+              child: const Text(
+                'Restart',
               ),
-            ],
-          ),
-          Text('$dateList'),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const Text(
-                'Location',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  subscribeCharacteristic(2);
-                  writeData(getLocation);
-                },
-                child: const Text('Get Location'),
-              ),
-            ],
-          ),
-          Text('$locationList'),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const Text(
-                'Prays Times',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  subscribeCharacteristic(3);
-                  writeData(getPray);
-                },
-                child: const Text('Get Prays Times'),
-              ),
-            ],
-          ),
-          Text('$prayList'),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const Text(
-                'Time Zone',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  subscribeCharacteristic(4);
-                  writeData(getZone);
-                },
-                child: const Text('Get Time Zones'),
-              ),
-            ],
-          ),
-          Text('$zoneList'),
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  writeData(getSound1);
-                },
-                child: const Text('sound 1'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  writeData(getSound2);
-                },
-                child: const Text('sound 2'),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  writeData(getSound3);
-                },
-                child: const Text('sound 3'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  writeData(getSound4);
-                },
-                child: const Text('sound 4'),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ]),
     );
   }
 }
