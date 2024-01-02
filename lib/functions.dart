@@ -7,7 +7,7 @@ import 'constants.dart';
 
 String getCurrentDateTime() {
   now = DateTime.now();
-  formattedDate = DateFormat('dd / MM / yyyy').format(now);
+  formattedDate = DateFormat('EEE, dd / MM').format(now);
   formattedTime = DateFormat('HH:mm').format(now);
 
   print('Current Date: $formattedDate');

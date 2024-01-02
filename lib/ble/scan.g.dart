@@ -1,49 +1,49 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'device_list.dart';
+part of 'scan.dart';
 
 // **************************************************************************
 // FunctionalDataGenerator
 // **************************************************************************
 
-abstract class $ScanningList {
-  const $ScanningList();
+abstract class $DeviceInteractionViewModel {
+  const $DeviceInteractionViewModel();
 
   String get deviceId;
-  // Connectable get connectableStatus;
-  // DeviceConnectionState get connectionStatus;
+  Connectable get connectableStatus;
+  DeviceConnectionState get connectionStatus;
   BleDeviceConnector get deviceConnector;
   Future<List<DiscoveredService>> Function() get discoverServices;
 
-  ScanningList copyWith({
+  DeviceInteractionViewModel copyWith({
     String? deviceId,
-    // Connectable? connectableStatus,
-    // DeviceConnectionState? connectionStatus,
+    Connectable? connectableStatus,
+    DeviceConnectionState? connectionStatus,
     BleDeviceConnector? deviceConnector,
     Future<List<DiscoveredService>> Function()? discoverServices,
   }) =>
-      ScanningList(
+      DeviceInteractionViewModel(
         deviceId: deviceId ?? this.deviceId,
-        // connectableStatus: connectableStatus ?? this.connectableStatus,
-        // connectionStatus: connectionStatus ?? this.connectionStatus,
+        connectableStatus: connectableStatus ?? this.connectableStatus,
+        connectionStatus: connectionStatus ?? this.connectionStatus,
         deviceConnector: deviceConnector ?? this.deviceConnector,
         discoverServices: discoverServices ?? this.discoverServices,
       );
 
-  ScanningList copyUsing(
-      void Function(DeviceList$Change change) mutator) {
-    final change = DeviceList$Change._(
+  DeviceInteractionViewModel copyUsing(
+      void Function(DeviceInteractionViewModel$Change change) mutator) {
+    final change = DeviceInteractionViewModel$Change._(
       this.deviceId,
-      // this.connectableStatus,
-      // this.connectionStatus,
+      this.connectableStatus,
+      this.connectionStatus,
       this.deviceConnector,
       this.discoverServices,
     );
     mutator(change);
-    return ScanningList(
+    return DeviceInteractionViewModel(
       deviceId: change.deviceId,
-      // connectableStatus: change.connectableStatus,
-      // connectionStatus: change.connectionStatus,
+      connectableStatus: change.connectableStatus,
+      connectionStatus: change.connectionStatus,
       deviceConnector: change.deviceConnector,
       discoverServices: change.discoverServices,
     );
@@ -51,17 +51,16 @@ abstract class $ScanningList {
 
   @override
   String toString() =>
-      // "DeviceList(deviceId: $deviceId, connectableStatus: $connectableStatus, connectionStatus: $connectionStatus, deviceConnector: $deviceConnector, discoverServices: $discoverServices)";
-      "DeviceList(deviceId: $deviceId, deviceConnector: $deviceConnector, discoverServices: $discoverServices)";
+      "DeviceInteractionViewModel(deviceId: $deviceId, connectableStatus: $connectableStatus, connectionStatus: $connectionStatus, deviceConnector: $deviceConnector, discoverServices: $discoverServices)";
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(Object other) =>
-      other is ScanningList &&
+      other is DeviceInteractionViewModel &&
           other.runtimeType == runtimeType &&
           deviceId == other.deviceId &&
-          // connectableStatus == other.connectableStatus &&
-          // connectionStatus == other.connectionStatus &&
+          connectableStatus == other.connectableStatus &&
+          connectionStatus == other.connectionStatus &&
           deviceConnector == other.deviceConnector &&
           const Ignore().equals(discoverServices, other.discoverServices);
 
@@ -70,40 +69,40 @@ abstract class $ScanningList {
   int get hashCode {
     var result = 17;
     result = 37 * result + deviceId.hashCode;
-    // result = 37 * result + connectableStatus.hashCode;
-    // result = 37 * result + connectionStatus.hashCode;
+    result = 37 * result + connectableStatus.hashCode;
+    result = 37 * result + connectionStatus.hashCode;
     result = 37 * result + deviceConnector.hashCode;
     result = 37 * result + const Ignore().hash(discoverServices);
     return result;
   }
 }
 
-class DeviceList$Change {
-  DeviceList$Change._(
+class DeviceInteractionViewModel$Change {
+  DeviceInteractionViewModel$Change._(
       this.deviceId,
-      // this.connectableStatus,
-      // this.connectionStatus,
+      this.connectableStatus,
+      this.connectionStatus,
       this.deviceConnector,
       this.discoverServices,
       );
 
   String deviceId;
-  // Connectable connectableStatus;
-  // DeviceConnectionState connectionStatus;
+  Connectable connectableStatus;
+  DeviceConnectionState connectionStatus;
   BleDeviceConnector deviceConnector;
   Future<List<DiscoveredService>> Function() discoverServices;
 }
 
 // ignore: avoid_classes_with_only_static_members
-class DeviceList$ {
-  static final deviceId = Lens<ScanningList, String>(
+class DeviceInteractionViewModel$ {
+  static final deviceId = Lens<DeviceInteractionViewModel, String>(
         (deviceIdContainer) => deviceIdContainer.deviceId,
         (deviceIdContainer, deviceId) =>
         deviceIdContainer.copyWith(deviceId: deviceId),
   );
-/*
+
   static final connectableStatus =
-  Lens<DeviceList, Connectable>(
+  Lens<DeviceInteractionViewModel, Connectable>(
         (connectableStatusContainer) =>
     connectableStatusContainer.connectableStatus,
         (connectableStatusContainer, connectableStatus) =>
@@ -112,20 +111,20 @@ class DeviceList$ {
   );
 
   static final connectionStatus =
-  Lens<DeviceList, DeviceConnectionState>(
+  Lens<DeviceInteractionViewModel, DeviceConnectionState>(
         (connectionStatusContainer) => connectionStatusContainer.connectionStatus,
         (connectionStatusContainer, connectionStatus) =>
         connectionStatusContainer.copyWith(connectionStatus: connectionStatus),
   );
-*/
+
   static final deviceConnector =
-  Lens<ScanningList, BleDeviceConnector>(
+  Lens<DeviceInteractionViewModel, BleDeviceConnector>(
         (deviceConnectorContainer) => deviceConnectorContainer.deviceConnector,
         (deviceConnectorContainer, deviceConnector) =>
         deviceConnectorContainer.copyWith(deviceConnector: deviceConnector),
   );
 
-  static final discoverServices = Lens<ScanningList,
+  static final discoverServices = Lens<DeviceInteractionViewModel,
       Future<List<DiscoveredService>> Function()>(
         (discoverServicesContainer) => discoverServicesContainer.discoverServices,
         (discoverServicesContainer, discoverServices) =>

@@ -1,11 +1,11 @@
 
-import 'package:azan/data/mobileData.dart';
 import 'package:azan/feedback/feedback1.dart';
 import 'package:azan/register/resetPassword.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../ble/device_list.dart';
 import '../constants.dart';
 
 class LogIn extends StatefulWidget {
@@ -110,7 +110,7 @@ class _LogInState extends State<LogIn> {
                   if (userSnapshot.docs.isNotEmpty) {
                     final username = userSnapshot.docs.first.id;
                     // print('Username: $username');
-                    Navigator.push(context,MaterialPageRoute(builder: (context)=>MobileData(name: username,)));
+                    Navigator.push(context,MaterialPageRoute(builder: (context)=>ScanningListScreen(userName: username,)));
                   } else {
                     setState(() {
                       notFound = true;

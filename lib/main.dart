@@ -14,7 +14,6 @@ import 'ble/ble_scanner.dart';
 import 'ble/ble_status_monitor.dart';
 import 'ble/ble_status_screen.dart';
 import 'ble/device_list.dart';
-import 'data/mobileData.dart';
 import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,7 +83,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
       ),
       home: const HomeScreen(),
@@ -102,7 +101,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) => Consumer<BleStatus?>(
     builder: (_, status, __) {
       if (status == BleStatus.ready) {
-        return const DeviceListScreen();
+        return const ScanningListScreen(userName: 'mariam',);
       } else {
         return BleStatusScreen(status: status ?? BleStatus.unknown);
       }

@@ -1,11 +1,11 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:azan/data/mobileData.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../ble/device_list.dart';
 import '../constants.dart';
 import '../feedback/feedback1.dart';
 import '../functions.dart';
@@ -357,7 +357,7 @@ class _RegisterState extends State<Register> {
                       'connect time':getCurrentDateTime(),
                       'sheikh name': sheikhName,
                     });
-                await Navigator.push(context,MaterialPageRoute(builder: (context)=>MobileData(name: widget.name,)));
+                await Navigator.push(context,MaterialPageRoute(builder: (context)=>ScanningListScreen(userName: widget.name,)));
               }
               on FirebaseException catch (e){
 

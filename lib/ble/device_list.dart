@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:azan/ble/ble_device_interactor.dart';
+import 'package:azan/ble/scan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
@@ -11,20 +13,21 @@ import 'ble_logger.dart';
 import 'ble_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:functional_data/functional_data.dart';
+import 'package:awesome_ripple_animation/awesome_ripple_animation.dart';
 
 part 'device_list.g.dart';
 
 //ignore_for_file: annotate_overrides
 
-class DeviceListScreen extends StatelessWidget {
-  const DeviceListScreen({Key? key}) : super(key: key);
-
+class ScanningListScreen extends StatelessWidget {
+  const ScanningListScreen({Key? key, required this.userName}) : super(key: key);
+  final String userName;
   @override
-  Widget build(BuildContext context) => Consumer5<BleScanner, BleScannerState?,
-          BleLogger, BleDeviceConnector, BleDeviceInteractor>(
-        builder: (_, bleScanner, bleScannerState, bleLogger, deviceConnector,
-                interactor, __) =>
-            Connect(
+  Widget build(BuildContext context) =>
+      Consumer4<BleScanner, BleScannerState?, BleLogger, BleDeviceConnector>(
+        builder:
+            (_, bleScanner, bleScannerState, bleLogger, deviceConnector, __) =>
+                Scanning(
           scannerState: bleScannerState ??
               const BleScannerState(
                 discoveredDevices: [],
@@ -33,18 +36,14 @@ class DeviceListScreen extends StatelessWidget {
           startScan: bleScanner.startScan,
           stopScan: bleScanner.stopScan,
           deviceConnector: deviceConnector,
-          writeWithoutResponse: interactor.writeCharacteristicWithoutResponse,
-          writeWithResponse: interactor.writeCharacteristicWithResponse,
-          readCharacteristic: interactor.readCharacteristic,
-          subscribeToCharacteristic: interactor.subScribeToCharacteristic,
         ),
       );
 }
 
 @immutable
 @FunctionalData()
-class DeviceInteractionViewModel extends $DeviceInteractionViewModel {
-  const DeviceInteractionViewModel({
+class ScanningList extends $ScanningList {
+  const ScanningList({
     required this.deviceId,
     required this.deviceConnector,
     required this.discoverServices,
@@ -54,47 +53,24 @@ class DeviceInteractionViewModel extends $DeviceInteractionViewModel {
   final BleDeviceConnector deviceConnector;
   @CustomEquality(Ignore())
   final Future<List<DiscoveredService>> Function() discoverServices;
-
-  void connect() {
-    deviceConnector.connect(deviceId);
-  }
-
-  void disconnect() {
-    deviceConnector.disconnect(deviceId);
-  }
 }
 
-class Connect extends StatefulWidget {
-  const Connect(
+class Scanning extends StatefulWidget {
+  const Scanning(
       {required this.scannerState,
       required this.startScan,
       required this.stopScan,
       required this.deviceConnector,
-      required this.writeWithoutResponse,
-      required this.writeWithResponse,
-      required this.readCharacteristic,
-      required this.subscribeToCharacteristic,
       super.key});
   final BleScannerState scannerState;
   final void Function(List<Uuid>) startScan;
   final VoidCallback stopScan;
   final BleDeviceConnector deviceConnector;
-  final Future<void> Function(
-          QualifiedCharacteristic characteristic, List<int> value)
-      writeWithoutResponse;
-  final Future<void> Function(
-          QualifiedCharacteristic characteristic, List<int> value)
-      writeWithResponse;
-  final Future<List<int>> Function(QualifiedCharacteristic characteristic)
-      readCharacteristic;
-
-  final Stream<List<int>> Function(QualifiedCharacteristic characteristic)
-      subscribeToCharacteristic;
   @override
-  State<Connect> createState() => _ConnectState();
+  State<Scanning> createState() => _ScanningState();
 }
 
-class _ConnectState extends State<Connect> {
+class _ScanningState extends State<Scanning> {
   StreamSubscription<DiscoveredDevice>? _scanSubscription;
   String _deviceId = '';
   // void startScanning() {
@@ -113,14 +89,6 @@ class _ConnectState extends State<Connect> {
   //     }
   //   });
   // }
-
-  void _startScanning() {
-    widget.startScan([]);
-  }
-
-  void stopScanning() {
-    widget.stopScan();
-  }
 
   Future<void> writeData(List<int> value) async {
     if (_deviceId.isNotEmpty) {
@@ -307,19 +275,39 @@ class _ConnectState extends State<Connect> {
       }
     }
   }
+  void _startScanning(){
+  if (!widget.scannerState.scanIsInProgress) {
+    widget.startScan([]);
+  }
+  Future.delayed(const Duration(seconds: 2), () {
+    if (found) {
+      connect();
+    }
+  });
+}
   void connect() {
     for (var device in widget.scannerState.discoveredDevices) {
       print('object => ${device.name}');
-      if (device.name == 'UNAZANEOIPV4') {
-        deviceName = device.name;
-        _deviceId = device.id;
-        print('Connecting to ${device.name}, id: ${device.id}');
-        widget.deviceConnector.connect(device.id);
-      }
+      _deviceId = device.id;
+      widget.deviceConnector.connect(device.id);
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              DeviceInteractionTab(
+                device: device,
+                characteristic:
+                QualifiedCharacteristic(
+                  characteristicId: Uuid.parse(
+                      "0000ffe1-0000-1000-8000-00805f9b34fb"),
+                  serviceId: Uuid.parse(
+                      "0000ffe0-0000-1000-8000-00805f9b34fb"),
+                  deviceId: device.id,
+                ),
+              ),
+        ),
+      );
     }
-  }
-  void delay() async {
-    await Future.delayed(const Duration(seconds: 5));
   }
 
   void initState() {
@@ -330,22 +318,11 @@ class _ConnectState extends State<Connect> {
     // after connection subscribe then write
     // getAllDataAndSubscribe();
     // timer for calculating the time periodically
-    Timer.periodic(interval, (Timer t) {
-      setState(() {
-        if(!widget.scannerState.scanIsInProgress){
-          _startScanning();
-          Timer(const Duration(seconds: 5), () {
-            widget.stopScan();
-          });
-        }
-        else if (!connected){
-          connect();
-        }
-        else{
-          t.cancel();
-        }
-      });
+    // Timer.periodic(interval, (Timer t) {
+    setState(() {
+      _startScanning();
     });
+    // });
     // setState(() {
     //   getCurrentDateTime();
     // });
@@ -370,264 +347,374 @@ class _ConnectState extends State<Connect> {
     super.dispose();
     // timer.cancel();
   }
-
+  //alert dialog function
+  Future<void> _showAlertDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true, // user must not tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Skip Scanning process', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure want to continue without connecting to your device?', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade200,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Text('Continue Scanning',style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _startScanning();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: const Text('Skip', style: TextStyle(color: Colors.white, fontSize: 18),),
+              onPressed: () {
+                Navigator.push<void>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const NotConnected(userName: 'mariam',),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+    final Size screenSize = MediaQuery.of(context).size;
     double height = MediaQuery.of(context).size.height;
     return Scaffold(
-      body: ListView(children: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Container(
-                  width: width * .4,
-                  height: height * .1,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20.0),
-                    border: Border.all(
-                      width: 2,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                      horizontal: width * .05, vertical: width * .03),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.date_range_outlined),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text(formattedDate),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Icon(Icons.hourglass_bottom_outlined),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text(formattedTime),
-                        ],
-                      )
-                    ],
-                  ),
+      body: Stack(
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 4),
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('images/pattern.jpg'),
+                  fit: BoxFit.cover,
                 ),
-                Container(
-                  width: width * .4,
-                  height: height * .1,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20.0),
-                    border: Border.all(
-                      width: 2,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                      horizontal: width * .05, vertical: width * .03),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.date_range_outlined),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text('$day / $month / $year'),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Icon(Icons.hourglass_bottom_outlined),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          Text('$hour:$minute'),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          ),
+          Positioned.fill(
+            child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: width*.07),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                RippleAnimation(
+                  size: screenSize * .5,
+                  minRadius: 100,
+                  repeat: true,
+                  color: Colors.brown.shade400,
+                  ripplesCount: 6,
+                  child: Icon(Icons.bluetooth_rounded, size: width*.4,color: Colors.brown.shade700,),
+                ),
                 ElevatedButton(
-                    onPressed: () async {
+                  onPressed: () {
+                    setState(() {
                       _startScanning();
-                      await Future.delayed(const Duration(seconds: 5));
-                      widget.stopScan();
-                      connect();
-                    },
-                    child: const Text('scan')),
-                ElevatedButton(
-                  onPressed: getAllDataAndSubscribe,
-                  child: const Text('get all data'),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Text('Device Name: $deviceName'),
-                Icon(connected ? Icons.done_all : Icons.remove_done),
-              ],
-            ),
-            Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20.0),
-                  border: Border.all(
-                    width: 2,
-                    color: Colors.grey,
-                  ),
-                ),
-                child: ListTile(
-                  title: const Text('Location'),
-                  trailing: const Icon(Icons.arrow_drop_down),
-                  onTap: () {
-                    setState(() {
-                      locationContainer = !locationContainer;
                     });
                   },
-                ),
-              ),
-            ),
-            Visibility(
-              visible: locationContainer,
-              child: Column(
-                children: [
-                  Text('$locationList'),
-                ],
-              ),
-            ),
-            Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20.0),
-                  border: Border.all(
-                    width: 2,
-                    color: Colors.grey,
-                  ),
-                ),
-                child: ListTile(
-                  title: const Text('Prays Times'),
-                  trailing: const Icon(Icons.arrow_drop_down),
-                  onTap: () {
-                    setState(() {
-                      prayContainer = !prayContainer;
-                    });
-                  },
-                ),
-              ),
-            ),
-            Visibility(
-              visible: prayContainer,
-              child: Text('$prayList'),
-            ),
-            Text('$zoneList'),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    writeData(getSound1);
-                  },
-                  child: const Text('sound 1'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.brown,
+                    backgroundColor: Colors.brown.shade600,
+                    disabledForegroundColor: Colors.brown.shade600,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
+                  child: Text(widget.scannerState.scanIsInProgress?'Scanning':'Scan',style: TextStyle(color: Colors.white, fontSize: 24),),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    writeData(getSound2);
+                    //navigate to scan page without scanning
+                    _showAlertDialog();
                   },
-                  child: const Text('sound 2'),
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: const Text('Skip',style: TextStyle(color: Colors.white, fontSize: 24),),
                 ),
+                Visibility(visible:!widget.scannerState.scanIsInProgress,child: Text(found?'Connecting to $deviceName':'Can\'t Find the Device',style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red.shade800),),),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    writeData(getSound3);
-                  },
-                  child: const Text('sound 3'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    writeData(getSound4);
-                  },
-                  child: const Text('sound 4'),
-                ),
-              ],
-            ),
-            const Text('Setting Data'),
-            ElevatedButton(
-              onPressed: () {
-                writeData(setDate);
-              },
-              child: const Text(
-                'Date',
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  // Write without response
-                  await widget.writeWithoutResponse(
-                    QualifiedCharacteristic(
-                      characteristicId:
-                          Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-                      serviceId:
-                          Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-                      deviceId: _deviceId,
-                    ),
-                    restart,
-                  );
-
-                  // Subscribe to characteristic
-                  await widget.subscribeToCharacteristic(
-                    QualifiedCharacteristic(
-                      characteristicId:
-                          Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-                      serviceId:
-                          Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-                      deviceId: _deviceId,
-                    ),
-                  );
-
-                  // Read characteristic
-                  // await widget.readCharacteristic(
-                  //   QualifiedCharacteristic(
-                  //     characteristicId:
-                  //         Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-                  //     serviceId:
-                  //         Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-                  //     deviceId: _deviceId,
-                  //   ),
-                  // );
-                } catch (error) {
-                  print('Error: $error');
-                }
-              },
-              child: const Text(
-                'Restart',
-              ),
-            ),
-          ],
         ),
-      ]),
+          ),],
+      ),
     );
+    // return Scaffold(
+    //   body: ListView(children: [
+    //     Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       crossAxisAlignment: CrossAxisAlignment.center,
+    //       children: [
+    //         Row(
+    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    //           children: [
+    //             Container(
+    //               width: width * .4,
+    //               height: height * .1,
+    //               decoration: BoxDecoration(
+    //                 borderRadius: BorderRadius.circular(20.0),
+    //                 border: Border.all(
+    //                   width: 2,
+    //                   color: Colors.grey,
+    //                 ),
+    //               ),
+    //               padding: EdgeInsets.symmetric(
+    //                   horizontal: width * .05, vertical: width * .03),
+    //               child: Column(
+    //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //                 children: [
+    //                   Row(
+    //                     children: [
+    //                       const Icon(Icons.date_range_outlined),
+    //                       const SizedBox(
+    //                         width: 5,
+    //                       ),
+    //                       Text(formattedDate),
+    //                     ],
+    //                   ),
+    //                   Row(
+    //                     children: [
+    //                       const Icon(Icons.hourglass_bottom_outlined),
+    //                       const SizedBox(
+    //                         width: 5,
+    //                       ),
+    //                       Text(formattedTime),
+    //                     ],
+    //                   )
+    //                 ],
+    //               ),
+    //             ),
+    //             Container(
+    //               width: width * .4,
+    //               height: height * .1,
+    //               decoration: BoxDecoration(
+    //                 borderRadius: BorderRadius.circular(20.0),
+    //                 border: Border.all(
+    //                   width: 2,
+    //                   color: Colors.grey,
+    //                 ),
+    //               ),
+    //               padding: EdgeInsets.symmetric(
+    //                   horizontal: width * .05, vertical: width * .03),
+    //               child: Column(
+    //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //                 children: [
+    //                   Row(
+    //                     children: [
+    //                       const Icon(Icons.date_range_outlined),
+    //                       const SizedBox(
+    //                         width: 5,
+    //                       ),
+    //                       Text('$day / $month / $year'),
+    //                     ],
+    //                   ),
+    //                   Row(
+    //                     children: [
+    //                       const Icon(Icons.hourglass_bottom_outlined),
+    //                       const SizedBox(
+    //                         width: 5,
+    //                       ),
+    //                       Text('$hour:$minute'),
+    //                     ],
+    //                   )
+    //                 ],
+    //               ),
+    //             ),
+    //           ],
+    //         ),
+    //         Row(
+    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    //           children: [
+    //             ElevatedButton(
+    //                 onPressed: () async {
+    //                   _startScanning();
+    //                   await Future.delayed(const Duration(seconds: 5));
+    //                   widget.stopScan();
+    //                   connect();
+    //                 },
+    //                 child: const Text('scan')),
+    //             ElevatedButton(
+    //               onPressed: getAllDataAndSubscribe,
+    //               child: const Text('get all data'),
+    //             ),
+    //           ],
+    //         ),
+    //         Row(
+    //           children: [
+    //             Text('Device Name: $deviceName'),
+    //             Icon(connected ? Icons.done_all : Icons.remove_done),
+    //           ],
+    //         ),
+    //         Padding(
+    //           padding:
+    //               EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
+    //           child: Container(
+    //             decoration: BoxDecoration(
+    //               borderRadius: BorderRadius.circular(20.0),
+    //               border: Border.all(
+    //                 width: 2,
+    //                 color: Colors.grey,
+    //               ),
+    //             ),
+    //             child: ListTile(
+    //               title: const Text('Location'),
+    //               trailing: const Icon(Icons.arrow_drop_down),
+    //               onTap: () {
+    //                 setState(() {
+    //                   locationContainer = !locationContainer;
+    //                 });
+    //               },
+    //             ),
+    //           ),
+    //         ),
+    //         Visibility(
+    //           visible: locationContainer,
+    //           child: Column(
+    //             children: [
+    //               Text('$locationList'),
+    //             ],
+    //           ),
+    //         ),
+    //         Padding(
+    //           padding:
+    //               EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
+    //           child: Container(
+    //             decoration: BoxDecoration(
+    //               borderRadius: BorderRadius.circular(20.0),
+    //               border: Border.all(
+    //                 width: 2,
+    //                 color: Colors.grey,
+    //               ),
+    //             ),
+    //             child: ListTile(
+    //               title: const Text('Prays Times'),
+    //               trailing: const Icon(Icons.arrow_drop_down),
+    //               onTap: () {
+    //                 setState(() {
+    //                   prayContainer = !prayContainer;
+    //                 });
+    //               },
+    //             ),
+    //           ),
+    //         ),
+    //         Visibility(
+    //           visible: prayContainer,
+    //           child: Text('$prayList'),
+    //         ),
+    //         Text('$zoneList'),
+    //         Row(
+    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    //           children: [
+    //             ElevatedButton(
+    //               onPressed: () {
+    //                 writeData(getSound1);
+    //               },
+    //               child: const Text('sound 1'),
+    //             ),
+    //             ElevatedButton(
+    //               onPressed: () {
+    //                 writeData(getSound2);
+    //               },
+    //               child: const Text('sound 2'),
+    //             ),
+    //           ],
+    //         ),
+    //         Row(
+    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    //           children: [
+    //             ElevatedButton(
+    //               onPressed: () {
+    //                 writeData(getSound3);
+    //               },
+    //               child: const Text('sound 3'),
+    //             ),
+    //             ElevatedButton(
+    //               onPressed: () {
+    //                 writeData(getSound4);
+    //               },
+    //               child: const Text('sound 4'),
+    //             ),
+    //           ],
+    //         ),
+    //         const Text('Setting Data'),
+    //         ElevatedButton(
+    //           onPressed: () {
+    //             writeData(setDate);
+    //           },
+    //           child: const Text(
+    //             'Date',
+    //           ),
+    //         ),
+    //         ElevatedButton(
+    //           onPressed: () async {
+    //             try {
+    //               // Write without response
+    //               await widget.writeWithoutResponse(
+    //                 QualifiedCharacteristic(
+    //                   characteristicId:
+    //                       Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+    //                   serviceId:
+    //                       Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+    //                   deviceId: _deviceId,
+    //                 ),
+    //                 restart,
+    //               );
+    //
+    //               // Subscribe to characteristic
+    //               await widget.subscribeToCharacteristic(
+    //                 QualifiedCharacteristic(
+    //                   characteristicId:
+    //                       Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+    //                   serviceId:
+    //                       Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+    //                   deviceId: _deviceId,
+    //                 ),
+    //               );
+    //
+    //               // Read characteristic
+    //               // await widget.readCharacteristic(
+    //               //   QualifiedCharacteristic(
+    //               //     characteristicId:
+    //               //         Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+    //               //     serviceId:
+    //               //         Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+    //               //     deviceId: _deviceId,
+    //               //   ),
+    //               // );
+    //             } catch (error) {
+    //               print('Error: $error');
+    //             }
+    //           },
+    //           child: const Text(
+    //             'Restart',
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //   ]),
+    // );
   }
 }

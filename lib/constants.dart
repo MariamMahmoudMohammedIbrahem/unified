@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:intl/intl.dart';
 
+Timer? periodicTimer;
+
 final ble = FlutterReactiveBle();
 String deviceName = '';
 // late var deviceId;
@@ -34,8 +36,14 @@ late StreamSubscription<DocumentSnapshot> userSubscription;
 late StreamSubscription<QuerySnapshot> citiesSubscription;
 
 //ble constants
+// bool scanning = false;
+bool found = false;
 bool connected = false;
 bool connectionStatus = false;
+bool list1 = false;
+bool list2 = false;
+bool list3 = false;
+bool list4 = false;
 late List<int> subscribeOutput;
 //date/time data from ble
 num year = 0;
@@ -50,16 +58,16 @@ late num latitude;
 late num longitude;
 List<int> locationList = [];
 //pray times data from ble
-late num fajrHour;
-late num fajrMinute;
-late num duhrHour;
-late num duhrMinute;
-late num asrHour;
-late num asrMinute;
-late num maghrebHour;
-late num maghrebMinute;
-late num ishaHour;
-late num ishaMinute;
+num fajrHour = 00;
+num fajrMinute = 00;
+num duhrHour = 00;
+num duhrMinute = 00;
+num asrHour = 00;
+num asrMinute = 00;
+num maghrebHour = 00;
+num maghrebMinute = 00;
+num ishaHour = 00;
+num ishaMinute = 00;
 List<int> prayList = [];
 //zone data from ble
 late num zone;
@@ -88,3 +96,5 @@ num sum = 0;
 //Data Visibility
 bool locationContainer = false;
 bool prayContainer = false;
+//ui
+double circleSize = 50.0;
