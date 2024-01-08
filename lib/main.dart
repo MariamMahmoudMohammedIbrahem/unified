@@ -1,7 +1,4 @@
-import 'package:azan/feedback/feedback1.dart';
 import 'package:azan/register/login.dart';
-import 'package:azan/register/register.dart';
-import 'package:azan/register/signup.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -13,7 +10,6 @@ import 'ble/ble_logger.dart';
 import 'ble/ble_scanner.dart';
 import 'ble/ble_status_monitor.dart';
 import 'ble/ble_status_screen.dart';
-import 'ble/device_list.dart';
 import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,10 +77,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Azan',
       theme: ThemeData(
         // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
+        textSelectionTheme: TextSelectionThemeData(selectionHandleColor: Colors.brown.shade700),
       ),
       home: const HomeScreen(),
     );
@@ -101,7 +99,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) => Consumer<BleStatus?>(
     builder: (_, status, __) {
       if (status == BleStatus.ready) {
-        return const ScanningListScreen(userName: 'mariam',);
+        return const LogIn();
       } else {
         return BleStatusScreen(status: status ?? BleStatus.unknown);
       }

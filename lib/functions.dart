@@ -90,6 +90,7 @@ String? validatePhoneNumber(String? value) {
 Future<void> getUserFields(String userId) async {
   QuerySnapshot querySnapshot = await firestore.collection('users').get();
   //get fields
+  print(userId);
   if (querySnapshot.docs.isNotEmpty) {
     testIDs = querySnapshot.docs.map((doc) => doc.id).toList();
     for(String id in testIDs){

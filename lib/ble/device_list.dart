@@ -35,7 +35,7 @@ class ScanningListScreen extends StatelessWidget {
               ),
           startScan: bleScanner.startScan,
           stopScan: bleScanner.stopScan,
-          deviceConnector: deviceConnector,
+          deviceConnector: deviceConnector, userName: userName,
         ),
       );
 }
@@ -61,11 +61,13 @@ class Scanning extends StatefulWidget {
       required this.startScan,
       required this.stopScan,
       required this.deviceConnector,
+      required this.userName,
       super.key});
   final BleScannerState scannerState;
   final void Function(List<Uuid>) startScan;
   final VoidCallback stopScan;
   final BleDeviceConnector deviceConnector;
+  final String userName;
   @override
   State<Scanning> createState() => _ScanningState();
 }
@@ -304,6 +306,7 @@ class _ScanningState extends State<Scanning> {
                       "0000ffe0-0000-1000-8000-00805f9b34fb"),
                   deviceId: device.id,
                 ),
+                userName: widget.userName,
               ),
         ),
       );
@@ -311,33 +314,9 @@ class _ScanningState extends State<Scanning> {
   }
 
   void initState() {
-    // _startScanning();//start scanning
-    // Future.delayed(const Duration(seconds: 5));//delay for scanning
-    // widget.stopScan(); // stop the scan
-    // connect(); //connect to the azan ble
-    // after connection subscribe then write
-    // getAllDataAndSubscribe();
-    // timer for calculating the time periodically
-    // Timer.periodic(interval, (Timer t) {
     setState(() {
       _startScanning();
     });
-    // });
-    // setState(() {
-    //   getCurrentDateTime();
-    // });
-    //timer
-    // Timer.periodic(const Duration(seconds: 2), (Timer t) {
-    //   //if !connected startScanning
-    //   if (!connected) {
-    //     startScanning();
-    //   }
-    //   //else get the data from the ble device
-    //   else {
-    //     getAllDataAndSubscribe();
-    //   }
-    //   t.cancel();
-    // });
     super.initState();
   }
 
@@ -345,7 +324,6 @@ class _ScanningState extends State<Scanning> {
     _scanSubscription
         ?.cancel(); // Cancel the subscription when the widget is disposed
     super.dispose();
-    // timer.cancel();
   }
   //alert dialog function
   Future<void> _showAlertDialog() async {
@@ -387,7 +365,7 @@ class _ScanningState extends State<Scanning> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        const NotConnected(userName: 'mariam',),
+                        NotConnected(userName: widget.userName,),
                   ),
                 );
               },
@@ -452,7 +430,7 @@ class _ScanningState extends State<Scanning> {
                       foregroundColor: Colors.brown,
                       backgroundColor: Colors.brown.shade600,
                       disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
                   child: const Text('Skip',style: TextStyle(color: Colors.white, fontSize: 24),),
                 ),
                 Visibility(visible:!widget.scannerState.scanIsInProgress,child: Text(found?'Connecting to $deviceName':'Can\'t Find the Device',style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red.shade800),),),

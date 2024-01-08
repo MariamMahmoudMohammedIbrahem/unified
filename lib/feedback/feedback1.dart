@@ -25,143 +25,166 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: width*.07),
-        child: ListView(
-          children: [
-            SizedBox(child: Image.asset('images/mosque.jpeg'),),
-            // options
-            Text('How can we help you'),
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: Column(
-                children: [
-                  Row(
+      appBar: AppBar(
+        leading: IconButton(onPressed: (){}, icon: Icon(Icons.arrow_back,color: Colors.brown.shade700,)),
+        title:Text('Complain',style: TextStyle(color: Colors.brown.shade700,fontWeight: FontWeight.bold,fontSize: 20),),
+        centerTitle: true,
+      ),
+      body: ListView(
+        children: [
+          SizedBox(width: width,child: Image.asset('images/feedback.jpg'),),
+          // options
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width*.07),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('How can we help you',style: TextStyle(color: Colors.brown.shade700,fontSize: 22,fontWeight: FontWeight.bold),),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Column(
                     children: [
-                      Radio(
-                        value: 'option 1',
-                        groupValue: selectedOption,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedOption = value!;
-                          });
-                        },
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'option 1',
+                            groupValue: selectedOption,
+                            activeColor: Colors.brown,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedOption = value!;
+                              });
+                            },
+                          ),
+                          Text('option 1',style: TextStyle(color: Colors.brown.shade700,fontSize: 20,),),
+                        ],
                       ),
-                      const Text('option 1'),
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'option 2',
+                            groupValue: selectedOption,
+                            activeColor: Colors.brown,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedOption = value!;
+                              });
+                            },
+                          ),
+                          Text('option 2',style: TextStyle(color: Colors.brown.shade700,fontSize: 20,),),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'option 3',
+                            groupValue: selectedOption,
+                            activeColor: Colors.brown,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedOption = value!;
+                              });
+                            },
+                          ),
+                          Text('option 3',style: TextStyle(color: Colors.brown.shade700,fontSize: 20,),),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'option 4',
+                            groupValue: selectedOption,
+                            activeColor: Colors.brown,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedOption = value!;
+                              });
+                            },
+                          ),
+                          Text('option 4',style: TextStyle(color: Colors.brown.shade700,fontSize: 20,),),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'more',
+                            groupValue: selectedOption,
+                            activeColor: Colors.brown,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedOption = value!;
+                              });
+                            },
+                          ),
+                          Text('Something Else',style: TextStyle(color: Colors.brown.shade700,fontSize: 20,),),
+                        ],
+                      ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Radio(
-                        value: 'option 2',
-                        groupValue: selectedOption,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedOption = value!;
-                          });
-                        },
+                ),
+                // leave side note
+                Text('Leave a note (if you want)',style: TextStyle(color: Colors.brown.shade700,fontSize: 22,fontWeight: FontWeight.bold),),
+                TextFormField(
+                  controller: controllerNote,
+                  decoration: InputDecoration(
+                      floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
+                        final Color color = states.contains(MaterialState.error)
+                            ? Theme.of(context).colorScheme.error
+                            : Colors.brown.shade900;
+                        return TextStyle(color: color, letterSpacing: 1.3);
+                      }),
+                      labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
+                        final Color color = states.contains(MaterialState.error)
+                            ? Theme.of(context).colorScheme.error
+                            : Colors.brown.shade800;
+                        return TextStyle(color: color, letterSpacing: 1.3);
+                      }),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                        borderSide: BorderSide(width: 1, color: Colors.brown),
                       ),
-                      const Text('option 2'),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Radio(
-                        value: 'option 3',
-                        groupValue: selectedOption,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedOption = value!;
-                          });
-                        },
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                        borderSide: BorderSide(width: 1, color: Colors.brown),
                       ),
-                      const Text('option 3'),
-                    ],
                   ),
-                  Row(
-                    children: [
-                      Radio(
-                        value: 'option 4',
-                        groupValue: selectedOption,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedOption = value!;
-                          });
-                        },
-                      ),
-                      const Text('option 4'),
-                    ],
+                  onChanged: (value){
+                    setState(() {
+                      msg = value;
+                    });
+                  },
+                ),
+                // store data
+                Align(
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: width*.8,
+                    child: ElevatedButton(
+                      onPressed: ()async{
+                        try{
+                          await FirebaseFirestore.instance.collection('users').doc(widget.name).collection('feedback').add(
+                              {
+                                'problem': selectedOption,
+                                'msg': msg,
+                              });
+                        }
+                        catch(error){
+                          print(error);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.brown.shade400,
+                          backgroundColor: Colors.brown,
+                          disabledForegroundColor: Colors.brown.shade600,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                      child: const Text('Submit',style: TextStyle(color: Colors.white,fontSize: 20),),
+                    ),
                   ),
-                  Row(
-                    children: [
-                      Radio(
-                        value: 'more',
-                        groupValue: selectedOption,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedOption = value!;
-                          });
-                        },
-                      ),
-                      const Text('Something Else'),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // leave side note
-            Text('Leave a note (if you want)'),
-            TextFormField(
-              controller: controllerNote,
-              decoration: InputDecoration(
-                  floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                    final Color color = states.contains(MaterialState.error)
-                        ? Theme.of(context).colorScheme.error
-                        : Colors.brown.shade900;
-                    return TextStyle(color: color, letterSpacing: 1.3);
-                  }),
-                  labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                    final Color color = states.contains(MaterialState.error)
-                        ? Theme.of(context).colorScheme.error
-                        : Colors.brown.shade800;
-                    return TextStyle(color: color, letterSpacing: 1.3);
-                  }),
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                    borderSide: BorderSide(width: 1, color: Colors.black),
-                  )
-              ),
-              onChanged: (value){
-                setState(() {
-                  msg = value;
-                });
-              },
-            ),
-            // store data
-            ElevatedButton(
-              onPressed: ()async{
-                try{
-                  await FirebaseFirestore.instance.collection('users').doc(widget.name).collection('feedback').add(
-                      {
-                        'problem': selectedOption,
-                        'msg': msg,
-                      });
-                }
-                catch(error){
-                  print(error);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.indigo[600],
-                shape: const StadiumBorder(),
-                disabledForegroundColor: Colors.indigo.withOpacity(0.38),
-                disabledBackgroundColor: Colors.indigo.withOpacity(0.12),
-              ),
-              child: const Text('Submit'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

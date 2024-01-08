@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -15,16 +16,19 @@ import '../register/login.dart';
 import '../register/resetPassword.dart';
 import 'ble_device_connector.dart';
 import 'ble_device_interactor.dart';
+import 'device_list.dart';
 part 'scan.g.dart';
 
 class DeviceInteractionTab extends StatelessWidget {
   const DeviceInteractionTab({
     required this.device,
     required this.characteristic,
+    required this.userName,
     Key? key,
   }) : super(key: key);
   final DiscoveredDevice device;
   final QualifiedCharacteristic characteristic;
+  final String userName;
 
   @override
   Widget build(BuildContext context) => Consumer4<BleDeviceConnector,
@@ -45,6 +49,7 @@ class DeviceInteractionTab extends StatelessWidget {
           readCharacteristic: interactor.readCharacteristic,
           subscribeToCharacteristic: interactor.subScribeToCharacteristic,
           name: device.name,
+              userName: userName,
         ),
       );
 }
@@ -60,10 +65,15 @@ class DeviceInteractionViewModel extends $DeviceInteractionViewModel {
     required this.discoverServices,
   });
 
+  @override
   final String deviceId;
+  @override
   final Connectable connectableStatus;
+  @override
   final DeviceConnectionState connectionStatus;
+  @override
   final BleDeviceConnector deviceConnector;
+  @override
   @CustomEquality(Ignore())
   final Future<List<DiscoveredService>> Function() discoverServices;
 
@@ -88,6 +98,7 @@ class Connecting extends StatefulWidget {
     required this.readCharacteristic,
     required this.subscribeToCharacteristic,
     required this.name,
+    required this.userName,
     super.key,
   });
   final DeviceInteractionViewModel viewModel;
@@ -104,6 +115,7 @@ class Connecting extends StatefulWidget {
   final Stream<List<int>> Function(QualifiedCharacteristic characteristic)
       subscribeToCharacteristic;
   final String name;
+  final String userName;
 
   @override
   State<Connecting> createState() => _ConnectingState();
@@ -271,7 +283,26 @@ class _ConnectingState extends State<Connecting> {
         break;
     }
   }
-
+  Future<void> saveInFirebase() async {
+    try{
+      await FirebaseFirestore.instance.collection('users').doc(widget.userName).collection('Cities').doc(area).update(
+          {
+            'fajr': '$fajrHour:$fajrMinute',
+            'duhr': '$duhrHour:$duhrMinute',
+            'asr': '$asrHour:$asrMinute',
+            'maghreb': '$maghrebHour:$maghrebMinute',
+            'isha': '$ishaHour:$ishaMinute',
+            'date': '$day / $month / $year',
+            'time': '$hour:$minute',
+            'longitude': longitude,
+            'latitude': latitude,
+            'zone': zone,
+          });
+    }
+    catch(e) {
+      print(e);
+    }
+  }
   void getAllDataAndSubscribe() async {
     List<Map<int, List<int>>> dataSets = [
       {1: getDate},
@@ -298,12 +329,40 @@ class _ConnectingState extends State<Connecting> {
         break; // Exit the loop if awaiting a response
       }
     }
+    if(list1 && list2 && list3 && list4){
+      saveInFirebase();
+    }
+    else if(!list1){
+      resetDateSubscription(1);
+      subscribeCharacteristic(1);
+      await writeData(getDate);
+    }
+    else if(!list2){
+      resetDateSubscription(2);
+      subscribeCharacteristic(2);
+      await writeData(getLocation);
+    }
+    else if(!list3){
+      resetDateSubscription(3);
+      subscribeCharacteristic(3);
+      await writeData(getPray);
+    }
+    else{
+      resetDateSubscription(4);
+      subscribeCharacteristic(4);
+      await writeData(getZone);
+    }
   }
 
+  @override
   void initState() {
     setState(() {
       getCurrentDateTime();
+      print('got data');
+      getUserFields(widget.userName);
+      print('got fields inshallah');
     });
+    //connect and get data
     periodicTimer = Timer.periodic(const Duration(seconds: 5), (Timer t) {
       if (!widget.viewModel.deviceConnected) {
         widget.viewModel.connect();
@@ -313,16 +372,28 @@ class _ConnectingState extends State<Connecting> {
         t.cancel();
       }
     });
+    //update time each minute
     Timer.periodic(const Duration(minutes: 1), (Timer t) {
       setState(() {
         getCurrentDateTime();
+        if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ScanningListScreen(
+                    userName: widget.userName,
+                  )));
+        }
       });
     });
     super.initState();
   }
+  @override
   void dispose() {
     super.dispose();
     periodicTimer?.cancel();
+    found = false;
+    deviceName = '';
   }
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final _auth = FirebaseAuth.instance;
@@ -334,7 +405,7 @@ class _ConnectingState extends State<Connecting> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    initial = widget.name.isNotEmpty ? widget.name[0].toUpperCase() : ''; // Get the first letter
+    initial = widget.userName.trim().isNotEmpty ? widget.userName.trim()[0].toUpperCase() : ''; // Get the first letter
     return Scaffold(
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
@@ -382,7 +453,7 @@ class _ConnectingState extends State<Connecting> {
                 ),
                 child: Center(
                   child: Text(
-                    widget.name,
+                    widget.userName.trim(),
                     style: TextStyle(
                       color: Colors.brown.shade700,
                       fontWeight: FontWeight.bold,
@@ -411,7 +482,7 @@ class _ConnectingState extends State<Connecting> {
               leading: Icon(Icons.settings, color: Colors.brown.shade700,size: 30,),
               title: Text('Account Details',style: TextStyle(color: Colors.brown.shade800,fontWeight: FontWeight.bold,fontSize: 25),),
               onTap: () {
-                Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: widget.name,)));
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: widget.userName.trim(),)));
               },
             ),
             Padding(
@@ -445,7 +516,7 @@ class _ConnectingState extends State<Connecting> {
               leading: Icon(Icons.feedback_outlined, color: Colors.brown.shade700,size: 30,),
               title: Text('Complain',style: TextStyle(color: Colors.brown.shade800,fontWeight: FontWeight.bold,fontSize: 25),),
               onTap: () {
-                Navigator.push(context,MaterialPageRoute(builder: (context)=>FeedbackRegister(name: widget.name,)));
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>FeedbackRegister(name: widget.userName.trim(),)));
               },
             ),
             Padding(
@@ -518,7 +589,8 @@ class _ConnectingState extends State<Connecting> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('Unit Date And Time: ',style: TextStyle(color: Colors.brown.shade700,fontWeight: FontWeight.bold,fontSize: 27,),),
-                            IconButton(onPressed: getAllDataAndSubscribe, icon: Icon(Icons.restore,color: Colors.brown.shade800,size: 30,))
+                            IconButton(onPressed: saveInFirebase, icon: Icon(Icons.cloud_upload_outlined,color: Colors.brown.shade800,size: 30,),),
+                            IconButton(onPressed: getAllDataAndSubscribe, icon: Icon(Icons.restore,color: Colors.brown.shade800,size: 30,),),
                           ],
                         ),
                       ),
@@ -678,20 +750,11 @@ class _ConnectingState extends State<Connecting> {
                       SizedBox(
                         width: width*.8,
                         child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.brown,
-                              backgroundColor: Colors.brown.shade600,
-                              disabledForegroundColor: Colors.brown.shade600,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                          onPressed: getAllDataAndSubscribe,
-                          icon: const Icon(Icons.restore,color: Colors.white,),
-                          label: const Text('get all data', style: TextStyle(color: Colors.white, fontSize: 24),),
-                        ),
-                      ),
-                      SizedBox(
-                        width: width*.8,
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () async {
+                            widget.subscribeToCharacteristic(widget.characteristic);
+                            await widget.writeWithoutResponse(widget.characteristic, setDate);
+                            getAllDataAndSubscribe();
+                          },
                           style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.brown,
                               backgroundColor: Colors.brown.shade600,
@@ -704,7 +767,20 @@ class _ConnectingState extends State<Connecting> {
                       SizedBox(
                         width: width*.8,
                         child: ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () async {
+                            await widget.writeWithoutResponse(widget.characteristic,restart);
+                            print('heer');
+                            await widget.subscribeToCharacteristic(widget.characteristic);
+                            await Future.delayed(const Duration(seconds: 1));
+                            if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ScanningListScreen(
+                                        userName: widget.userName,
+                                      )));
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.brown,
                               backgroundColor: Colors.brown.shade600,
@@ -736,6 +812,7 @@ class _NotConnectedState extends State<NotConnected> {
   @override
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final _auth = FirebaseAuth.instance;
+  @override
   void initState(){
     Timer.periodic(const Duration(minutes: 1), (Timer t) {
       setState(() {
@@ -748,9 +825,10 @@ class _NotConnectedState extends State<NotConnected> {
     await _auth.signOut();
     Navigator.push(context,MaterialPageRoute(builder: (context)=>const LogIn()));
   }
+  @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    initial = widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : ''; // Get the first letter
+    initial = widget.userName.trim().isNotEmpty ? widget.userName.trim()[0].toUpperCase() : ''; // Get the first letter
     return Scaffold(
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
@@ -798,7 +876,7 @@ class _NotConnectedState extends State<NotConnected> {
                 ),
                 child: Center(
                   child: Text(
-                    widget.userName,
+                    widget.userName.trim(),
                     style: TextStyle(
                       color: Colors.brown.shade700,
                       fontWeight: FontWeight.bold,
@@ -827,7 +905,7 @@ class _NotConnectedState extends State<NotConnected> {
               leading: Icon(Icons.settings, color: Colors.brown.shade700,size: 30,),
               title: Text('Account Details',style: TextStyle(color: Colors.brown.shade800,fontWeight: FontWeight.bold,fontSize: 25),),
               onTap: () {
-                Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: widget.userName,)));
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: widget.userName.trim(),)));
               },
             ),
             Padding(
@@ -861,7 +939,7 @@ class _NotConnectedState extends State<NotConnected> {
               leading: Icon(Icons.feedback_outlined, color: Colors.brown.shade700,size: 30,),
               title: Text('Complain',style: TextStyle(color: Colors.brown.shade800,fontWeight: FontWeight.bold,fontSize: 25),),
               onTap: () {
-                Navigator.push(context,MaterialPageRoute(builder: (context)=>FeedbackRegister(name: widget.userName,)));
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>FeedbackRegister(name: widget.userName.trim(),)));
               },
             ),
             Padding(
@@ -1080,4 +1158,3 @@ class _NotConnectedState extends State<NotConnected> {
     );
   }
 }
-
