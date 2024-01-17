@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:azan/functions.dart';
 import 'package:azan/register/resetPassword.dart';
 import 'package:azan/register/signup.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -62,6 +64,7 @@ class _LogInState extends State<LogIn> {
                   ),
                   TextFormField(
                     controller: emailUserController,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       prefixIcon: Icon(Icons.people, color: Colors.brown.shade700,),
                       labelText: 'Email',
@@ -186,12 +189,13 @@ class _LogInState extends State<LogIn> {
                             if (userSnapshot.docs.isNotEmpty) {
                               final username = userSnapshot.docs.first.id;
                               // print('Username: $username');
-                              Navigator.push(
+                              Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) => ScanningListScreen(
                                             userName: username,
-                                          )));
+                                          )),
+                                    (route) => false,);
                             } else {
                               setState(() {
                                 notFound = true;

@@ -20,6 +20,12 @@ var sheikhNumberController = TextEditingController();
 var userEmailController = TextEditingController();
 var mosqueController = TextEditingController();
 var areaController = TextEditingController();
+late String userName;
+// late String sheikhName;
+late String sheikhNumber;
+late String userEmail;
+// late String mosque;
+// late String area;
 String updatedArea = '';
 String updatedMosque = '';
 class _AccountEditState extends State<AccountEdit> {
@@ -54,7 +60,7 @@ class _AccountEditState extends State<AccountEdit> {
           backgroundColor: Colors.transparent,
         leading: IconButton(
           onPressed: () {
-            Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: userNameController.text,)));
+            Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: userNameController.text,)));
           },
           icon: Icon(
             Icons.arrow_back,
@@ -122,7 +128,7 @@ class _AccountEditState extends State<AccountEdit> {
                               cursorColor: Colors.brown,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.supervised_user_circle_outlined, color: Colors.white,),
-                                hintText: 'Username',
+                                // hintText: 'Username',
                                 floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                                   final Color color = states.contains(MaterialState.error)
                                       ? Theme.of(context).colorScheme.error
@@ -144,6 +150,11 @@ class _AccountEditState extends State<AccountEdit> {
                                 ),
                               ),
                               style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                              onChanged: (value)async{
+                              setState(() {
+                                userName = value;
+                              });
+                            },
                             ),
                           ),
                         ),
@@ -159,7 +170,7 @@ class _AccountEditState extends State<AccountEdit> {
                               cursorColor: Colors.brown,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.person, color: Colors.white,),
-                                hintText: 'Sheikh Name',
+                                // hintText: 'Sheikh Name',
                                 floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                                   final Color color = states.contains(MaterialState.error)
                                       ? Theme.of(context).colorScheme.error
@@ -178,6 +189,11 @@ class _AccountEditState extends State<AccountEdit> {
                                 ),
                               ),
                               style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                              onChanged: (value)async{
+                                setState(() {
+                                  sheikhName = value;
+                                });
+                              },
                             ),
                           ),
                         ),
@@ -193,7 +209,7 @@ class _AccountEditState extends State<AccountEdit> {
                               cursorColor: Colors.brown,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.phone,color: Colors.white,),
-                                hintText: 'Sheikh Number',
+                                // hintText: 'Sheikh Number',
                                 floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                                   final Color color = states.contains(MaterialState.error)
                                       ? Theme.of(context).colorScheme.error
@@ -212,6 +228,11 @@ class _AccountEditState extends State<AccountEdit> {
                                 ),
                               ),
                               style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                              onChanged: (value)async{
+                                setState(() {
+                                  sheikhNumber = value;
+                                });
+                              },
                             ),
                           ),
                         ),
@@ -227,7 +248,7 @@ class _AccountEditState extends State<AccountEdit> {
                               cursorColor: Colors.brown,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.email_outlined, color: Colors.white,),
-                                hintText: 'Email',
+                                // hintText: 'Email',
                                 floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                                   final Color color = states.contains(MaterialState.error)
                                       ? Theme.of(context).colorScheme.error
@@ -246,6 +267,11 @@ class _AccountEditState extends State<AccountEdit> {
                                 ),
                               ),
                               style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                              onChanged: (value)async{
+                                setState(() {
+                                  userEmail = value;
+                                });
+                              },
                             ),
                           ),
                         ),
@@ -388,7 +414,7 @@ class _AccountEditState extends State<AccountEdit> {
                               },
                               itemBuilder: (BuildContext context) {
                                 final List<PopupMenuEntry<String>> items = [];
-                                for (String item in mosquesIDs) {
+                                for (String item in dataList) {
                                   items.add(
                                     PopupMenuItem<String>(
                                       value: item,
@@ -554,7 +580,16 @@ class _AccountEditState extends State<AccountEdit> {
                                       });
                                     }
                                     print('Done');
-                                    Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountEdit(name: userNameController.text,)));
+                                    // Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountEdit(name: userNameController.text,)));
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AccountDetails(
+                                          name: widget.name,
+                                        ),
+                                      ),
+                                      // (route) => false,
+                                    );
                                   } catch (e) {
                                     print(e);
                                   }

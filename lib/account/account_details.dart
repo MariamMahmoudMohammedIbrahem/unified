@@ -6,6 +6,7 @@ import 'package:azan/functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../ble/device_list.dart';
 import '../constants.dart';
 
 class AccountDetails extends StatefulWidget {
@@ -35,7 +36,9 @@ class _AccountDetailsState extends State<AccountDetails> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          onPressed: (){},
+          onPressed: (){
+            Navigator.pop(context,true);
+          },
           icon: Icon(
             Icons.arrow_back,
             color: Colors.brown.shade800,

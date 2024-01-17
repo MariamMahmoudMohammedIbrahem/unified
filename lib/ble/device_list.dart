@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:azan/ble/ble_device_interactor.dart';
 import 'package:azan/ble/scan.dart';
+import 'package:azan/register/login.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
@@ -73,210 +74,6 @@ class Scanning extends StatefulWidget {
 }
 
 class _ScanningState extends State<Scanning> {
-  StreamSubscription<DiscoveredDevice>? _scanSubscription;
-  String _deviceId = '';
-  // void startScanning() {
-  //   setState(() {
-  //     widget.deviceConnector.disconnect(_deviceId);
-  //   });
-  //   _scanSubscription = ble.scanForDevices(
-  //     withServices: [],
-  //     scanMode: ScanMode.lowLatency,
-  //   ).listen((scanResult) {
-  //     if (scanResult.name.isNotEmpty) {
-  //       deviceName = scanResult.name;
-  //       _deviceId = scanResult.id;
-  //       widget.deviceConnector.connect(scanResult.id);
-  //       stopScanning(); // Stop scanning when a device is found
-  //     }
-  //   });
-  // }
-
-  Future<void> writeData(List<int> value) async {
-    if (_deviceId.isNotEmpty) {
-      try {
-        await ble.writeCharacteristicWithoutResponse(
-          QualifiedCharacteristic(
-            characteristicId:
-                Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-            serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-            deviceId: _deviceId,
-          ),
-          value: value,
-        );
-        print('Data written successfully');
-      } catch (error) {
-        print('Error writing data: $error');
-      }
-    } else {
-      print('Device not connected');
-    }
-  }
-
-  StreamSubscription<List<int>>? dateSubscription;
-  StreamSubscription<List<int>>? locationSubscription;
-  StreamSubscription<List<int>>? praySubscription;
-  StreamSubscription<List<int>>? zoneSubscription;
-  bool awaitingResponse = false;
-  void resetDateSubscription(int dataType) {
-    switch (dataType) {
-      case 1:
-        dateSubscription?.cancel(); // Cancel the existing subscription
-        dateSubscription = null; // Reset dateSubscription to null
-        break;
-      case 2:
-        locationSubscription?.cancel();
-        locationSubscription = null;
-        break;
-      case 3:
-        praySubscription?.cancel();
-        praySubscription = null;
-        break;
-      case 4:
-        zoneSubscription?.cancel();
-        zoneSubscription = null;
-        break;
-    }
-  }
-
-  void subscribeCharacteristic(int dataType) {
-    Stream<List<int>> stream;
-    switch (dataType) {
-      case 1:
-        dateSubscription?.resume();
-        locationSubscription?.pause();
-        praySubscription?.pause();
-        zoneSubscription?.pause();
-        if (dateSubscription == null) {
-          print('in subscribe');
-          stream = _createSubscription();
-          dateSubscription = stream.listen((event) {
-            setState(() {
-              print('1$event');
-              if (event.length == 11) {
-                dateList = List.from(event);
-                year = convertToInt(event, 3, 1);
-                month = convertToInt(event, 4, 1);
-                day = convertToInt(event, 5, 1);
-                hour = convertToInt(event, 6, 1);
-                minute = convertToInt(event, 7, 1);
-                second = convertToInt(event, 8, 1);
-              }
-            });
-          });
-        }
-        break;
-      case 2:
-        dateSubscription?.pause();
-        locationSubscription?.resume();
-        praySubscription?.pause();
-        zoneSubscription?.pause();
-        if (locationSubscription == null) {
-          stream = _createSubscription();
-          locationSubscription = stream.listen((event) {
-            setState(() {
-              print('2$event');
-              if (event.length == 13) {
-                locationList = List.from(event);
-                latitude = convertToInt(event, 3, 4);
-                longitude = convertToInt(event, 7, 4);
-              }
-            });
-          });
-        }
-        break;
-      case 3:
-        dateSubscription?.pause();
-        locationSubscription?.pause();
-        praySubscription?.resume();
-        zoneSubscription?.pause();
-        if (praySubscription == null) {
-          stream = _createSubscription();
-          praySubscription = stream.listen((event) {
-            setState(() {
-              print('3$event');
-              if (event.length == 15) {
-                prayList = List.from(event);
-                fajrHour = convertToInt(event, 3, 1);
-                fajrMinute = convertToInt(event, 4, 1);
-                duhrHour = convertToInt(event, 5, 1);
-                duhrMinute = convertToInt(event, 6, 1);
-                asrHour = convertToInt(event, 7, 1);
-                asrMinute = convertToInt(event, 8, 1);
-                maghrebHour = convertToInt(event, 9, 1);
-                maghrebMinute = convertToInt(event, 10, 1);
-                ishaHour = convertToInt(event, 11, 1);
-                ishaMinute = convertToInt(event, 12, 1);
-              }
-            });
-          });
-        }
-        break;
-      case 4:
-        dateSubscription?.pause();
-        locationSubscription?.pause();
-        praySubscription?.pause();
-        zoneSubscription?.resume();
-        if (zoneSubscription == null) {
-          stream = _createSubscription();
-          zoneSubscription = stream.listen((event) {
-            setState(() {
-              print('4$event');
-              if (event.length == 6) {
-                zoneList = List.from(event);
-                zone = convertToInt(event, 3, 1);
-              }
-            });
-          });
-        }
-        break;
-    }
-  }
-
-  Stream<List<int>> _createSubscription() {
-    return ble
-        .subscribeToCharacteristic(
-          QualifiedCharacteristic(
-            characteristicId:
-                Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-            serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-            deviceId: _deviceId,
-          ),
-        )
-        .distinct()
-        .asyncMap((event) async {
-      // You can process event or modify data before updating the list
-      return List<int>.from(event);
-    });
-  }
-
-  void getAllDataAndSubscribe() async {
-    List<Map<int, List<int>>> dataSets = [
-      {1: getDate},
-      {2: getLocation},
-      {3: getPray},
-      {4: getZone},
-    ];
-
-    for (var data in dataSets) {
-      int dataType = data.keys.first;
-      List<int> dataToWrite = data.values.first;
-      print('dataType$dataType');
-      print('dataToWrite$dataToWrite');
-      print(awaitingResponse);
-      if (!awaitingResponse) {
-        awaitingResponse = true;
-        resetDateSubscription(dataType);
-        subscribeCharacteristic(dataType);
-        await writeData(dataToWrite);
-        await Future.delayed(const Duration(seconds: 2));
-        awaitingResponse = false;
-      } else {
-        print('Awaiting response, cannot send another packet yet.');
-        break; // Exit the loop if awaiting a response
-      }
-    }
-  }
   void _startScanning(){
   if (!widget.scannerState.scanIsInProgress) {
     widget.startScan([]);
@@ -289,8 +86,6 @@ class _ScanningState extends State<Scanning> {
 }
   void connect() {
     for (var device in widget.scannerState.discoveredDevices) {
-      print('object => ${device.name}');
-      _deviceId = device.id;
       widget.deviceConnector.connect(device.id);
       Navigator.push<void>(
         context,
@@ -316,13 +111,13 @@ class _ScanningState extends State<Scanning> {
   void initState() {
     setState(() {
       _startScanning();
+      getDocumentIDs();
+      getUserFields(widget.userName);
     });
     super.initState();
   }
 
   void dispose() {
-    _scanSubscription
-        ?.cancel(); // Cancel the subscription when the widget is disposed
     super.dispose();
   }
   //alert dialog function
@@ -379,65 +174,114 @@ class _ScanningState extends State<Scanning> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     final Size screenSize = MediaQuery.of(context).size;
-    double height = MediaQuery.of(context).size.height;
-    return Scaffold(
-      body: Stack(
-        children: [
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 4),
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('images/pattern.jpg'),
-                  fit: BoxFit.cover,
+    return WillPopScope(
+
+      onWillPop: () async {
+        // Custom logic when the back button is pressed
+        // Return true to allow popping the page, or false to prevent it
+        // You can also perform actions before popping the page
+        bool shouldPop = await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Confirm Logging Out'),
+              content: Text('Do you really want to Log Out?'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LogIn()),
+                          (route) => false,);
+                  },
+                  child: Text('Yes'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                  child: Text('No'),
+                ),
+              ],
+            );
+          },
+        );
+
+        return shouldPop ?? false;
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 4),
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('images/pattern.jpg'),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned.fill(
-            child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: width*.07),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                RippleAnimation(
-                  size: screenSize * .5,
-                  minRadius: 100,
-                  repeat: true,
-                  color: Colors.brown.shade400,
-                  ripplesCount: 6,
-                  child: Icon(Icons.bluetooth_rounded, size: width*.4,color: Colors.brown.shade700,),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _startScanning();
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.brown,
-                    backgroundColor: Colors.brown.shade600,
-                    disabledForegroundColor: Colors.brown.shade600,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
-                  child: Text(widget.scannerState.scanIsInProgress?'Scanning':'Scan',style: TextStyle(color: Colors.white, fontSize: 24),),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    //navigate to scan page without scanning
-                    _showAlertDialog();
-                  },
-                  style: ElevatedButton.styleFrom(
+            Positioned.fill(
+              child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: width*.07),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  RippleAnimation(
+                    size: screenSize * .5,
+                    minRadius: 100,
+                    repeat: true,
+                    color: Colors.brown.shade400,
+                    ripplesCount: 6,
+                    child: Icon(Icons.bluetooth_rounded, size: width*.4,color: Colors.brown.shade700,),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _startScanning();
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.brown,
                       backgroundColor: Colors.brown.shade600,
                       disabledForegroundColor: Colors.brown.shade600,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
-                  child: const Text('Skip',style: TextStyle(color: Colors.white, fontSize: 24),),
-                ),
-                Visibility(visible:!widget.scannerState.scanIsInProgress,child: Text(found?'Connecting to $deviceName':'Can\'t Find the Device',style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red.shade800),),),
-              ],
-            ),
+                    child: Text(widget.scannerState.scanIsInProgress?'Scanning':'Scan',style: const TextStyle(color: Colors.white, fontSize: 24),),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      //navigate to scan page without scanning
+                      _showAlertDialog();
+                    },
+                    style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.brown,
+                        backgroundColor: Colors.brown.shade600,
+                        disabledForegroundColor: Colors.brown.shade600,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
+                    child: const Text('Skip',style: TextStyle(color: Colors.white, fontSize: 24),),
+                  ),
+                  Visibility(visible:!widget.scannerState.scanIsInProgress,child: Text(found?'Connecting to $deviceName':'Can\'t Find the Device',style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red.shade800),),),
+                  // ElevatedButton(
+                  //   onPressed: () async {
+                  //     try {
+                  //       QuerySnapshot Cities = await FirebaseFirestore.instance.collection('Cities').get();
+                  //       if (Cities.docs.isNotEmpty) {
+                  //         List locationIds = Cities.docs.map((doc) => doc.id).toList();
+                  //         print(locationIds);
+                  //       }
+                  //     } catch (e) {
+                  //       print('Error retrieving documents: $e');
+                  //     }
+                  //   },
+                  //   child: const Text('compose packet'),),
+                ],
+              ),
+          ),
+            ),],
         ),
-          ),],
       ),
     );
     // return Scaffold(
