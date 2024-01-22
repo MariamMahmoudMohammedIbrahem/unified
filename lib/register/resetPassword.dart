@@ -1,11 +1,9 @@
 import 'dart:ui';
 
-import 'package:firebase_core/firebase_core.dart';
+import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 class ResetPassword extends StatefulWidget {
-
-  static String id = 'reset_password_page';
 
   const ResetPassword({Key? key}) : super(key: key);
 
@@ -24,8 +22,8 @@ class _ResetPasswordState extends State<ResetPassword> {
       showDialog(
           context: context,
           builder: (context) {
-            return const AlertDialog(
-              content: Text('Password reset link sent! check your email'),
+            return AlertDialog(
+              content: Text(TKeys.resetPassword.translate(context)),
             );
           }
       );
@@ -35,7 +33,7 @@ class _ResetPasswordState extends State<ResetPassword> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              content: Text(e.toString()),
+              content: Text(TKeys.problemOccurred.translate(context)),
             );
           }
       );
@@ -44,7 +42,6 @@ class _ResetPasswordState extends State<ResetPassword> {
 
   @override
   Widget build(BuildContext context) {
-    double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
@@ -86,7 +83,6 @@ class _ResetPasswordState extends State<ResetPassword> {
                   ),
                   TextFormField(
                     style: TextStyle(color: Colors.grey.shade600,fontSize: 17),
-                    // keyboardType: insertedtype,
                     textAlign: TextAlign.start,
                     onChanged: (value) {
                       _email = value;
@@ -94,7 +90,7 @@ class _ResetPasswordState extends State<ResetPassword> {
                     // obscureText: obscureText,
                     decoration: InputDecoration(
                       prefixIcon: Icon(Icons.email, color: Colors.brown.shade700,),
-                      labelText: 'Email',
+                      labelText: TKeys.email.translate(context),
                       floatingLabelStyle: MaterialStateTextStyle.resolveWith(
                               (Set<MaterialState> states) {
                             final Color color = states.contains(MaterialState.error)
@@ -129,9 +125,9 @@ class _ResetPasswordState extends State<ResetPassword> {
                           disabledForegroundColor: Colors.brown.shade600,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
                         onPressed: passwordReset,
-                        child: const Text(
-                          'Reset Password',
-                          style: TextStyle(color: Colors.white, fontSize: 24,),
+                        child: Text(
+                          TKeys.resetPassword.translate(context),
+                          style: const TextStyle(color: Colors.white, fontSize: 24,),
                         )
                     ),
                   ),

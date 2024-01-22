@@ -1,9 +1,13 @@
 import 'package:azan/register/login.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:provider/provider.dart';
-
+import 'package:azan/localization_service.dart';
 import 'ble/ble_device_connector.dart';
 import 'ble/ble_device_interactor.dart';
 import 'ble/ble_logger.dart';
@@ -12,6 +16,7 @@ import 'ble/ble_status_monitor.dart';
 import 'ble/ble_status_screen.dart';
 import 'firebase_options.dart';
 Future<void> main() async {
+  final localizationController = Get.put(LocalizationController(initialLanguage: 'ar'));
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -60,9 +65,27 @@ Future<void> main() async {
           ),
         ),
       ],
-      child: const MyApp(),
+      child: GetBuilder<LocalizationController>(
+          init: localizationController,
+          builder: (LocalizationController controller )=> MaterialApp(
+            debugShowCheckedModeBanner: false,
+            locale: controller.currentLanguage != ''
+                ? Locale(controller.currentLanguage,'')
+                : null,
+            localeResolutionCallback: LocalizationService.localeResolutionCallBack,
+            supportedLocales: LocalizationService.supportedLocales,
+            localizationsDelegates: const [
+              ...LocalizationService.localizationsDelegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              DefaultCupertinoLocalizations.delegate,
+              FallbackCupertinoLocalisationsDelegate(),
+            ],
+            home: const HomeScreen(),
+          )
+      // child: const MyApp(),
     ),
-  );
+  ));
   initializeReactiveBle();
 }
 void initializeReactiveBle() {

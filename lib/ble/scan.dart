@@ -1,8 +1,10 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'dart:developer';
 import 'dart:ui';
 
+import 'package:azan/ble/ble_status_monitor.dart';
 import 'package:azan/ble/settings.dart';
+import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -174,9 +176,9 @@ class _ConnectingState extends State<Connecting> {
     switch (dataType) {
       case 1:
         dateSubscription?.resume();
-        locationSubscription?.pause();
-        praySubscription?.pause();
-        zoneSubscription?.pause();
+        locationSubscription?.cancel();
+        praySubscription?.cancel();
+        zoneSubscription?.cancel();
         if (dateSubscription == null) {
           stream = _createSubscription();
           dateSubscription = stream.listen((event) {
@@ -198,10 +200,10 @@ class _ConnectingState extends State<Connecting> {
         }
         break;
       case 2:
-        dateSubscription?.pause();
-        locationSubscription?.pause();
+        dateSubscription?.cancel();
+        locationSubscription?.cancel();
         praySubscription?.resume();
-        zoneSubscription?.pause();
+        zoneSubscription?.cancel();
         if (praySubscription == null) {
           stream = _createSubscription();
           praySubscription = stream.listen((event) {
@@ -227,10 +229,10 @@ class _ConnectingState extends State<Connecting> {
         }
         break;
       case 3:
-        dateSubscription?.pause();
+        dateSubscription?.cancel();
         locationSubscription?.resume();
-        praySubscription?.pause();
-        zoneSubscription?.pause();
+        praySubscription?.cancel();
+        zoneSubscription?.cancel();
         if (locationSubscription == null) {
           stream = _createSubscription();
           locationSubscription = stream.listen((event) {
@@ -238,8 +240,10 @@ class _ConnectingState extends State<Connecting> {
               print('3$event');
               if (event.length == 13) {
                 // locationList = List.from(event);
-                unitLatitude = int.parse('${event[3].toString().padLeft(2, '0')}${event[4].toString().padLeft(2, '0')}${event[5].toString().padLeft(2, '0')}${event[6].toString().padLeft(2, '0')}');
-                unitLongitude = int.parse('${event[7].toString().padLeft(2, '0')}${event[8].toString().padLeft(2, '0')}${event[9].toString().padLeft(2, '0')}${event[10].toString().padLeft(2, '0')}');
+                // unitLatitude = int.parse('${event[3].toString().padLeft(2, '0')}${event[4].toString().padLeft(2, '0')}${event[5].toString().padLeft(2, '0')}${event[6].toString().padLeft(2, '0')}');
+                unitLatitude = convertToInt(event, 3, 4);
+                // unitLongitude = int.parse('${event[7].toString().padLeft(2, '0')}${event[8].toString().padLeft(2, '0')}${event[9].toString().padLeft(2, '0')}${event[10].toString().padLeft(2, '0')}');
+                unitLongitude = convertToInt(event, 7, 4);
                 list3 = true;
                 awaitingResponse = false;
               }
@@ -248,9 +252,9 @@ class _ConnectingState extends State<Connecting> {
         }
         break;
       case 4:
-        dateSubscription?.pause();
-        locationSubscription?.pause();
-        praySubscription?.pause();
+        dateSubscription?.cancel();
+        locationSubscription?.cancel();
+        praySubscription?.cancel();
         zoneSubscription?.resume();
         if (zoneSubscription == null) {
           stream = _createSubscription();
@@ -299,7 +303,6 @@ class _ConnectingState extends State<Connecting> {
       {3: getLocation},
       {4: getZone},
     ];
-
     for (var data in dataSets) {
       int dataType = data.keys.first;
       List<int> dataToWrite = data.values.first;
@@ -356,7 +359,6 @@ class _ConnectingState extends State<Connecting> {
   void startPeriodicTimer() {
     hourTimer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
       updateDateTime(); // Trigger the update asynchronously
-      // composeBlePacket(0x01, [setYear,setMonth,setDay,setHour,setMinute,setSecond]);
     });
   }
 
@@ -394,27 +396,116 @@ class _ConnectingState extends State<Connecting> {
     });
   }
 
+  late StreamSubscription<$ConnectionStateUpdate> connectionStateSubscription;
+
   Future<void> disconnectRestart() async {
-    print('1');
-    await widget.writeWithoutResponse(widget.characteristic, restart);
-    print('11');
-    widget.subscribeToCharacteristic(widget.characteristic);
-    print('111');
-    if (widget.viewModel.connectionStatus ==
-        DeviceConnectionState.disconnected) {
-      setState(() {
-        print('1111');
-        found = false;
-        deviceName = '';
-        restartFlag = true;
-      });
-      Navigator.push(
-          context,
-          MaterialPageRoute(
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text('Restarting...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+    try{
+      List<int> dataSets = [1,2,3,4];
+      for (int data in dataSets) {
+        resetDateSubscription(data);
+      }
+      await widget.writeWithoutResponse(widget.characteristic, restart);
+      widget.subscribeToCharacteristic(widget.characteristic);
+      // await Future.delayed(const Duration(seconds: 1));
+      // widget.device.connectable.
+      timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
+        if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
+          setState(() {
+            found = false;
+            deviceName = '';
+            restartFlag = true;
+          });
+
+          // Cancel the timer if the condition is met
+          timer?.cancel();
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
               builder: (context) => ScanningListScreen(
-                    userName: widget.userName,
-                  )));
+                userName: widget.userName,
+              ),
+            ),
+          );
+        }
+        else{
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: Colors.brown.shade50,
+              title: const Text('wait a minute'),
+              content: Text('${widget.viewModel.connectionStatus}'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+      // if (widget.viewModel.connectionStatus ==
+      //     DeviceConnectionState.disconnected) {
+      //   setState(() {
+      //     found = false;
+      //     deviceName = '';
+      //     restartFlag = true;
+      //   });
+      //   Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (context) => ScanningListScreen(
+      //             userName: widget.userName,
+      //           )));
+      // }
     }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text('Failed to update. Please Try Again :('),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      );
+    }
+
   }
   Future<void> settingLocation() async {
     widget.subscribeToCharacteristic(widget.characteristic);
@@ -470,11 +561,6 @@ class _ConnectingState extends State<Connecting> {
     hourTimer?.cancel();
     deviceName = '';
     super.dispose();
-    // dateSubscription?.cancel();
-    // locationSubscription?.cancel();
-    // praySubscription?.cancel();
-    // zoneSubscription?.cancel();
-    // awaitingResponse = false;
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -493,15 +579,13 @@ class _ConnectingState extends State<Connecting> {
         : ''; // Get the first letter
     return WillPopScope(
       onWillPop: () async {
-        // Custom logic when the back button is pressed
-        // Return true to allow popping the page, or false to prevent it
-        // You can also perform actions before popping the page
         bool shouldPop = await showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Confirm Exit', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
-              content: Text('Do you really want to exit?', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+              backgroundColor: Colors.brown.shade50,
+              title: Text(TKeys.confirmExitTitle.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+              content: Text(TKeys.confirmExitHeadline.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
               actions: [
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -509,7 +593,7 @@ class _ConnectingState extends State<Connecting> {
                       backgroundColor: Colors.brown.shade200,
                       disabledForegroundColor: Colors.brown.shade600,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: Text('Yes',style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
+                  child: Text(TKeys.yes.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
                   onPressed: () {
                     setState(() {
                       deviceName = '';
@@ -533,7 +617,7 @@ class _ConnectingState extends State<Connecting> {
                       backgroundColor: Colors.brown.shade600,
                       disabledForegroundColor: Colors.brown.shade600,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: const Text('No',style: TextStyle(color: Colors.white,fontSize: 18),),
+                  child: Text(TKeys.no.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
                   onPressed: () {
                     Navigator.of(context).pop(false);
                   },
@@ -613,7 +697,7 @@ class _ConnectingState extends State<Connecting> {
                     size: 30,
                   ),
                   title: Text(
-                    'Dashboard',
+                    TKeys.dashboard.translate(context),
                     style: TextStyle(
                         color: Colors.brown.shade800,
                         fontWeight: FontWeight.bold,
@@ -640,7 +724,7 @@ class _ConnectingState extends State<Connecting> {
                     size: 30,
                   ),
                   title: Text(
-                    'Account Details',
+                    TKeys.accountDetails.translate(context),
                     style: TextStyle(
                         color: Colors.brown.shade800,
                         fontWeight: FontWeight.bold,
@@ -673,7 +757,7 @@ class _ConnectingState extends State<Connecting> {
                     size: 30,
                   ),
                   title: Text(
-                    'Change Password',
+                    TKeys.changePassword.translate(context),
                     style: TextStyle(
                         color: Colors.brown.shade800,
                         fontWeight: FontWeight.bold,
@@ -704,7 +788,7 @@ class _ConnectingState extends State<Connecting> {
                     size: 30,
                   ),
                   title: Text(
-                    'Complain',
+                    TKeys.complain.translate(context),
                     style: TextStyle(
                         color: Colors.brown.shade800,
                         fontWeight: FontWeight.bold,
@@ -741,7 +825,7 @@ class _ConnectingState extends State<Connecting> {
                           size: 30,
                         ),
                         title: Text(
-                          'Settings',
+                          TKeys.settings.translate(context),
                           style: TextStyle(
                               color: Colors.brown.shade800,
                               fontWeight: FontWeight.bold,
@@ -789,7 +873,7 @@ class _ConnectingState extends State<Connecting> {
                     size: 30,
                   ),
                   title: Text(
-                    'Logout',
+                    TKeys.logout.translate(context),
                     style: TextStyle(
                         color: Colors.brown.shade800,
                         fontWeight: FontWeight.bold,
@@ -826,30 +910,23 @@ class _ConnectingState extends State<Connecting> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Stack(
-                      children: [
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Text(
-                            formattedTime,
-                            style: TextStyle(
-                                color: Colors.brown.shade800,
-                                fontSize: 100,
-                                fontWeight: FontWeight.bold),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10.0),
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(
+                            color: Colors.brown.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30,
                           ),
+                          children: [
+                            TextSpan(text: formattedDate),
+                            const TextSpan(text: '\n'),
+                            TextSpan(text: formattedTime, style: const TextStyle(fontSize: 85)),
+                          ],
                         ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Text(
-                            formattedDate,
-                            style: TextStyle(
-                              color: Colors.brown.shade800,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(
@@ -858,7 +935,7 @@ class _ConnectingState extends State<Connecting> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Unit Date And Time: ',
+                            TKeys.dateTime.translate(context),
                             style: TextStyle(
                               color: Colors.brown.shade700,
                               fontWeight: FontWeight.bold,
@@ -873,7 +950,7 @@ class _ConnectingState extends State<Connecting> {
                                 list3 = false;
                                 list4 = false;
                               });
-                              Future.delayed(Duration(seconds: 1));
+                              Future.delayed(const Duration(seconds: 1));
                               periodicTimer = Timer.periodic(
                                   const Duration(seconds: 1), (Timer t) {
                                 if (!list1 || !list2 || !list3 || !list4) {
@@ -965,16 +1042,19 @@ class _ConnectingState extends State<Connecting> {
                       padding: EdgeInsets.symmetric(
                         horizontal: width * 0.05,
                       ),
-                      child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Text(
-                            'Pray Times: ',
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            TKeys.prayTimes.translate(context),
                             style: TextStyle(
                               color: Colors.brown.shade700,
                               fontWeight: FontWeight.bold,
                               fontSize: 27,
                             ),
-                          )),
+                          ),
+                        ],
+                      ),
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(
@@ -984,7 +1064,7 @@ class _ConnectingState extends State<Connecting> {
                           ListTile(
                             leading: Image.asset('images/fajr.png'),
                             title: Text(
-                              'Fajr',
+                              TKeys.fajr.translate(context),
                               style: TextStyle(
                                   color: Colors.brown.shade800, fontSize: 25),
                             ),
@@ -1002,7 +1082,7 @@ class _ConnectingState extends State<Connecting> {
                           ListTile(
                             leading: Image.asset('images/zuhr.png'),
                             title: Text(
-                              'Zuhr',
+                              TKeys.duhr.translate(context),
                               style: TextStyle(
                                   color: Colors.brown.shade800, fontSize: 25),
                             ),
@@ -1020,7 +1100,7 @@ class _ConnectingState extends State<Connecting> {
                           ListTile(
                             leading: Image.asset('images/asr.png'),
                             title: Text(
-                              'Asr',
+                              TKeys.asr.translate(context),
                               style: TextStyle(
                                   color: Colors.brown.shade800, fontSize: 25),
                             ),
@@ -1038,7 +1118,7 @@ class _ConnectingState extends State<Connecting> {
                           ListTile(
                             leading: Image.asset('images/maghrib.png'),
                             title: Text(
-                              'Maghrib',
+                              TKeys.maghreb.translate(context),
                               style: TextStyle(
                                   color: Colors.brown.shade800, fontSize: 25),
                             ),
@@ -1056,7 +1136,7 @@ class _ConnectingState extends State<Connecting> {
                           ListTile(
                             leading: Image.asset('images/isha.png'),
                             title: Text(
-                              'isha',
+                              TKeys.isha.translate(context),
                               style: TextStyle(
                                   color: Colors.brown.shade800, fontSize: 25),
                             ),
@@ -1072,12 +1152,6 @@ class _ConnectingState extends State<Connecting> {
                         ],
                       ),
                     ),
-                    // ElevatedButton(
-                    //   onPressed: (){
-                    //     composeBlePacket(0x01, [setYear,setMonth,setDay,setHour,setMinute,setSecond]);
-                    //     },
-                    //   child: Text('date compose'),
-                    // ),
                     Visibility(
                       visible: !admin,
                       child: Column(
@@ -1095,16 +1169,19 @@ class _ConnectingState extends State<Connecting> {
                           Padding(
                             padding: EdgeInsets.symmetric(
                                 horizontal: width * 0.05, vertical: 10),
-                            child: Align(
-                                alignment: Alignment.bottomLeft,
-                                child: Text(
-                                  'Settings Options: ',
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  TKeys.settingOptions.translate(context),
                                   style: TextStyle(
                                     color: Colors.brown.shade700,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 27,
                                   ),
-                                )),
+                                ),
+                              ],
+                            ),
                           ),
                           SizedBox(
                             width: width * .8,
@@ -1122,9 +1199,9 @@ class _ConnectingState extends State<Connecting> {
                                 Icons.settings_backup_restore,
                                 color: Colors.white,
                               ),
-                              label: const Text(
-                                'Setting Prayer Times',
-                                style: TextStyle(color: Colors.white, fontSize: 24),
+                              label: Text(
+                                TKeys.settingPrayerTimes.translate(context),
+                                style: const TextStyle(color: Colors.white, fontSize: 24),
                               ),
                             ),
                           ),
@@ -1144,9 +1221,9 @@ class _ConnectingState extends State<Connecting> {
                                 Icons.restart_alt,
                                 color: Colors.white,
                               ),
-                              label: const Text(
-                                'Restarting The Unit',
-                                style: TextStyle(
+                              label: Text(
+                                TKeys.restart.translate(context),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
                                 ),
@@ -1156,273 +1233,6 @@ class _ConnectingState extends State<Connecting> {
                         ],
                       ),
                     ),
-                    // ElevatedButton(
-                    //     onPressed: () {
-                    //       // setLocation = composeBLEPacket(0x07, [30142208, 31741347]);
-                    //     },
-                    //     child: Text('location compose')),
-                    /*Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 5.0),
-                      child: SizedBox(
-                        width: width * .8,
-                        height: 55,
-                        child: PopupMenuButton<String>(
-                          onSelected: (String value) async {
-                            setState(() async {
-                              // Handle the selected value
-                              area = value;
-                              getLongitude();
-                            });
-                          },
-                          color: Colors.brown.shade700,
-                          itemBuilder: (BuildContext context) {
-                            final List<PopupMenuEntry<String>> items = [];
-                            for (String item in citiesIDs) {
-                              items.add(
-                                PopupMenuItem<String>(
-                                  value: item,
-                                  child: Text(
-                                    item,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              );
-                              if (item != citiesIDs.last) {
-                                items.add(const PopupMenuDivider());
-                              }
-                            }
-                            items.add(const PopupMenuDivider());
-                            return items;
-                          },
-                          offset: const Offset(0, 50),
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 15.0),
-                            decoration: BoxDecoration(
-                                color: Colors.brown.shade600.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(20.0)),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    area == '' ? 'Select An Area' : area,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.arrow_drop_down,
-                                  color: Colors.white,
-                                  size: 35,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: width * .8,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          settingLocation();
-                        },
-                        style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.brown.shade100,
-                            backgroundColor: Colors.brown.shade600,
-                            disabledForegroundColor: Colors.brown.shade900,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10))),
-                        icon: const Icon(
-                          Icons.settings_backup_restore,
-                          color: Colors.white,
-                        ),
-                        label: const Text(
-                          'Setting Unit Location',
-                          style: TextStyle(color: Colors.white, fontSize: 24),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: width * .8,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          zoneBefore = zoneAfter;
-                          settingZone();
-                        },
-                        style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.brown.shade100,
-                            backgroundColor: Colors.brown.shade600,
-                            disabledForegroundColor: Colors.brown.shade900,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10))),
-                        icon: const Icon(
-                          Icons.settings_backup_restore,
-                          color: Colors.white,
-                        ),
-                        label: const Text(
-                          'Setting Unit Zone',
-                          style: TextStyle(color: Colors.white, fontSize: 24),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: width * .8,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          widget
-                              .subscribeToCharacteristic(widget.characteristic);
-                          await widget.writeWithoutResponse(
-                              widget.characteristic, getTest);
-                          getAllDataAndSubscribe();
-                        },
-                        style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.brown.shade100,
-                            backgroundColor: Colors.brown.shade600,
-                            disabledForegroundColor: Colors.brown.shade900,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10))),
-                        icon: const Icon(
-                          Icons.settings_backup_restore,
-                          color: Colors.white,
-                        ),
-                        label: const Text(
-                          'Enter Test Mode',
-                          style: TextStyle(color: Colors.white, fontSize: 24),
-                        ),
-                      ),
-                    ),*/
-
-                    /*Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 5.0),
-                      child: SizedBox(
-                        width: width * .8,
-                        height: 55,
-                        child: PopupMenuButton<String>(
-                          onSelected: (String value) {
-                            setState(() {
-                              area = value;
-                              getLongitude();
-                            });
-                          },
-                          color: Colors.brown.shade700,
-                          itemBuilder: (BuildContext context) {
-                            final List<PopupMenuEntry<String>> items = [];
-                            for (String item in citiesIDs) {
-                              items.add(
-                                PopupMenuItem<String>(
-                                  value: item,
-                                  child: Text(
-                                    item,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              );
-                              if (item != citiesIDs.last) {
-                                items.add(const PopupMenuDivider());
-                              }
-                            }
-                            items.add(const PopupMenuDivider());
-                            return items;
-                          },
-                          offset: const Offset(0, 50),
-                          child: Container(
-                            padding:
-                            const EdgeInsets.symmetric(horizontal: 15.0),
-                            decoration: BoxDecoration(
-                                color: Colors.brown.shade600.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(20.0)),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    area == '' ? 'Select An Area' : area,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.arrow_drop_down,
-                                  color: Colors.white,
-                                  size: 35,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: width * .8,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          settingLocation();
-                        },
-                        style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.brown.shade100,
-                            backgroundColor: Colors.brown.shade600,
-                            disabledForegroundColor: Colors.brown.shade900,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10))),
-                        icon: const Icon(
-                          Icons.settings_backup_restore,
-                          color: Colors.white,
-                        ),
-                        label: const Text(
-                          'Setting Unit Location',
-                          style: TextStyle(color: Colors.white, fontSize: 24),
-                        ),
-                      ),
-                    ),
-                    Visibility(
-                      visible: admin,
-                      child: SizedBox(
-                        width: width*.8,
-                        child: ElevatedButton(
-                          onPressed: (){
-                            Navigator.push<void>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    SettingTab(
-                                      device: widget.device,
-                                      characteristic:
-                                      QualifiedCharacteristic(
-                                        characteristicId: Uuid.parse(
-                                            "0000ffe1-0000-1000-8000-00805f9b34fb"),
-                                        serviceId: Uuid.parse(
-                                            "0000ffe0-0000-1000-8000-00805f9b34fb"),
-                                        deviceId: widget.viewModel.deviceId,
-                                      ),
-                                      userName: widget.userName,
-                                    ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.brown.shade100,
-                              backgroundColor: Colors.brown.shade600,
-                              disabledForegroundColor: Colors.brown.shade900,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10))),
-                          child: const Text('ADMIN PAGE', style: TextStyle(color: Colors.white, fontSize: 24),),
-                        ),
-                      ),
-                    ),*/
                   ],
                 ),
               ]),
@@ -1448,8 +1258,10 @@ class _NotConnectedState extends State<NotConnected> {
   final _auth = FirebaseAuth.instance;
   @override
   void initState() {
+    skipData(widget.userName);
     hourTimer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
       setState(() {
+        print('skip page timer');
         getCurrentDateTime();
       });
     });
@@ -1539,7 +1351,7 @@ class _NotConnectedState extends State<NotConnected> {
                 size: 30,
               ),
               title: Text(
-                'Dashboard',
+                TKeys.dashboard.translate(context),
                 style: TextStyle(
                     color: Colors.brown.shade800,
                     fontWeight: FontWeight.bold,
@@ -1564,7 +1376,7 @@ class _NotConnectedState extends State<NotConnected> {
                 size: 30,
               ),
               title: Text(
-                'Account Details',
+                TKeys.accountDetails.translate(context),
                 style: TextStyle(
                     color: Colors.brown.shade800,
                     fontWeight: FontWeight.bold,
@@ -1596,7 +1408,7 @@ class _NotConnectedState extends State<NotConnected> {
                 size: 30,
               ),
               title: Text(
-                'Change Password',
+                TKeys.changePassword.translate(context),
                 style: TextStyle(
                     color: Colors.brown.shade800,
                     fontWeight: FontWeight.bold,
@@ -1626,7 +1438,7 @@ class _NotConnectedState extends State<NotConnected> {
                 size: 30,
               ),
               title: Text(
-                'Complain',
+                TKeys.complain.translate(context),
                 style: TextStyle(
                     color: Colors.brown.shade800,
                     fontWeight: FontWeight.bold,
@@ -1658,7 +1470,7 @@ class _NotConnectedState extends State<NotConnected> {
                 size: 30,
               ),
               title: Text(
-                'Logout',
+                TKeys.logout.translate(context),
                 style: TextStyle(
                     color: Colors.brown.shade800,
                     fontWeight: FontWeight.bold,
@@ -1692,44 +1504,40 @@ class _NotConnectedState extends State<NotConnected> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Text(
-                          formattedTime,
-                          style: TextStyle(
-                              color: Colors.brown.shade800,
-                              fontSize: 100,
-                              fontWeight: FontWeight.bold),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: TextStyle(
+                          color: Colors.brown.shade800,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30,
                         ),
+                        children: [
+                          TextSpan(text: formattedDate),
+                          const TextSpan(text: '\n'),
+                          TextSpan(text: formattedTime, style: const TextStyle(fontSize: 85)),
+                        ],
                       ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Text(
-                          formattedDate,
-                          style: TextStyle(
-                            color: Colors.brown.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(
                         horizontal: width * 0.05, vertical: 10),
-                    child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Unit Date And Time: ',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          TKeys.dateTime.translate(context),
                           style: TextStyle(
                             color: Colors.brown.shade700,
                             fontWeight: FontWeight.bold,
                             fontSize: 27,
                           ),
-                        )),
+                        ),
+                      ],
+                    ),
                   ),
                   Container(
                     width: width * .6,
@@ -1757,7 +1565,7 @@ class _NotConnectedState extends State<NotConnected> {
                               width: 5,
                             ),
                             Text(
-                              '$day / $month / $year',
+                              ishaHour == 00 && ishaMinute == 00? formattedDateUnit: '$day / $month / $year',
                               style: TextStyle(
                                   color: Colors.brown.shade800,
                                   fontSize: 24,
@@ -1776,7 +1584,7 @@ class _NotConnectedState extends State<NotConnected> {
                               width: 5,
                             ),
                             Text(
-                              '$hour:$minute',
+                              ishaHour == 00 && ishaMinute == 00?formattedTimeUnit:'$hour:$minute',
                               style: TextStyle(
                                   color: Colors.brown.shade800,
                                   fontSize: 24,
@@ -1804,16 +1612,19 @@ class _NotConnectedState extends State<NotConnected> {
                     padding: EdgeInsets.symmetric(
                       horizontal: width * 0.05,
                     ),
-                    child: Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Text(
-                          'Pray Times: ',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          TKeys.prayTimes.translate(context),
                           style: TextStyle(
                             color: Colors.brown.shade700,
                             fontWeight: FontWeight.bold,
                             fontSize: 27,
                           ),
-                        )),
+                        ),
+                      ],
+                    ),
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(
@@ -1823,12 +1634,12 @@ class _NotConnectedState extends State<NotConnected> {
                         ListTile(
                           leading: Image.asset('images/fajr.png'),
                           title: Text(
-                            'Fajr',
+                            TKeys.fajr.translate(context),
                             style: TextStyle(
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            '$fajrHour:$fajrMinute',
+                            ishaHour == 00 && ishaMinute == 00?fajr:'$fajrHour:$fajrMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1841,12 +1652,12 @@ class _NotConnectedState extends State<NotConnected> {
                         ListTile(
                           leading: Image.asset('images/zuhr.png'),
                           title: Text(
-                            'Zuhr',
+                            TKeys.duhr.translate(context),
                             style: TextStyle(
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            '$duhrHour:$duhrMinute',
+                            ishaHour == 00 && ishaMinute == 00?duhr:'$duhrHour:$duhrMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1859,12 +1670,12 @@ class _NotConnectedState extends State<NotConnected> {
                         ListTile(
                           leading: Image.asset('images/asr.png'),
                           title: Text(
-                            'Asr',
+                            TKeys.asr.translate(context),
                             style: TextStyle(
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            '$asrHour:$asrMinute',
+                            ishaHour == 00 && ishaMinute == 00?asr:'$asrHour:$asrMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1877,12 +1688,12 @@ class _NotConnectedState extends State<NotConnected> {
                         ListTile(
                           leading: Image.asset('images/maghrib.png'),
                           title: Text(
-                            'Maghrib',
+                            TKeys.maghreb.translate(context),
                             style: TextStyle(
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            '$maghrebHour:$maghrebMinute',
+                            ishaHour == 00 && ishaMinute == 00?maghreb:'$maghrebHour:$maghrebMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1895,12 +1706,12 @@ class _NotConnectedState extends State<NotConnected> {
                         ListTile(
                           leading: Image.asset('images/isha.png'),
                           title: Text(
-                            'isha',
+                            TKeys.isha.translate(context),
                             style: TextStyle(
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            '$ishaHour:$ishaMinute',
+                            ishaHour == 00 && ishaMinute == 00?isha:'$ishaHour:$ishaMinute',
                             style: TextStyle(
                               color: Colors.brown.shade800,
                               fontSize: 24,

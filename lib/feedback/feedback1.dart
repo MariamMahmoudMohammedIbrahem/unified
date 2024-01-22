@@ -1,12 +1,7 @@
-// import 'package:azan/feedback/feedback2.dart';
+import 'package:azan/constants.dart';
+import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../ble/device_list.dart';
-import '../constants.dart';
 
 class FeedbackRegister extends StatefulWidget {
   const FeedbackRegister({
@@ -28,9 +23,10 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         leading: IconButton(
             onPressed: () {
               Navigator.pop(context,true);
@@ -40,7 +36,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
               color: Colors.brown.shade700,
             )),
         title: Text(
-          'Complain',
+          TKeys.complain.translate(context),
           style: TextStyle(
               color: Colors.brown.shade700,
               fontWeight: FontWeight.bold,
@@ -61,7 +57,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'How can we help you',
+                  TKeys.help.translate(context),
                   style: TextStyle(
                       color: Colors.brown.shade700,
                       fontSize: 22,
@@ -84,7 +80,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                             },
                           ),
                           Text(
-                            'Azaan Time',
+                            TKeys.azaanTime.translate(context),
                             style: TextStyle(
                               color: Colors.brown.shade700,
                               fontSize: 20,
@@ -105,7 +101,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                             },
                           ),
                           Text(
-                            'All LEDs On',
+                            TKeys.leds.translate(context),
                             style: TextStyle(
                               color: Colors.brown.shade700,
                               fontSize: 20,
@@ -126,7 +122,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                             },
                           ),
                           Text(
-                            'Noise in Azaan',
+                            TKeys.noise.translate(context),
                             style: TextStyle(
                               color: Colors.brown.shade700,
                               fontSize: 20,
@@ -147,7 +143,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                             },
                           ),
                           Text(
-                            'Other',
+                            TKeys.other.translate(context),
                             style: TextStyle(
                               color: Colors.brown.shade700,
                               fontSize: 20,
@@ -160,7 +156,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                 ),
                 // leave side note
                 Text(
-                  'Leave a note (if you want)',
+                  TKeys.note.translate(context),
                   style: TextStyle(
                       color: Colors.brown.shade700,
                       fontSize: 22,
@@ -206,14 +202,42 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                     child: ElevatedButton(
                       onPressed: () async {
                         try {
-                          await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(widget.name)
-                              .collection('feedback')
-                              .add({
-                            'problem': selectedOption,
-                            'msg': msg,
-                          });
+                          if(selectedOption.isNotEmpty){
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(widget.name)
+                                .collection('feedback').doc('$setDay-$setMonth-$setYear-$formattedTime')
+                                .set({
+                              'problem': selectedOption,
+                              'msg': msg,
+                              'time of unit': formattedTime,
+                              'date of unit': formattedDate,
+                              'longitude of mobile':storedLongitude,
+                              'latitude of mobile':storedLatitude,
+                              'longitude of unit':unitLongitude,
+                              'latitude of unit':unitLatitude,
+                            });
+                            Navigator.pop(context,true);
+                          }
+                          else{
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(TKeys.error.translate(context)),
+                                  content: Text('Please specify your problem.'),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context, false);
+                                      },
+                                      child: Text(TKeys.ok.translate(context)),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
                         } catch (error) {
                           print(error);
                         }
@@ -224,9 +248,9 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                           disabledForegroundColor: Colors.brown.shade600,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10))),
-                      child: const Text(
-                        'Submit',
-                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      child: Text(
+                        TKeys.submit.translate(context),
+                        style: const TextStyle(color: Colors.white, fontSize: 20),
                       ),
                     ),
                   ),

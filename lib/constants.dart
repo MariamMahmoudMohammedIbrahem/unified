@@ -15,6 +15,8 @@ String deviceName = '';
 DateTime now = DateTime.now();
 String formattedDate = DateFormat('EEE, dd / MM').format(now);
 String formattedTime = DateFormat('HH:mm:ss').format(now);
+String formattedDateUnit = '';
+String formattedTimeUnit = '';
 const interval = Duration(seconds: 1);
 
 bool showPassword = true;
@@ -95,7 +97,12 @@ num asrMinute = 00;
 num maghrebHour = 00;
 num maghrebMinute = 00;
 num ishaHour = 00;
-num ishaMinute = 00;
+num ishaMinute = 00; //database
+String fajr = '';
+String duhr = '';
+String asr = '';
+String maghreb = '';
+String isha = '';
 List<int> prayList = [];
 //zone data from ble
 late num zoneBefore;
@@ -132,3 +139,4 @@ bool prayContainer = false;
 double circleSize = 50.0;
 bool restartFlag = false;
 bool setDateTime = false;
+bool toggle = false; //english

@@ -1,12 +1,10 @@
-import 'dart:async';
 import 'dart:ui';
 
 import 'package:azan/account/edit_details.dart';
 import 'package:azan/functions.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
 
-import '../ble/device_list.dart';
 import '../constants.dart';
 
 class AccountDetails extends StatefulWidget {
@@ -94,7 +92,7 @@ class _AccountDetailsState extends State<AccountDetails> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Hello,', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.brown.shade700),),
+                                Text(TKeys.hello.translate(context), style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.brown.shade700),),
                                 Text(widget.name, style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Colors.brown.shade700),),
                               ],
                             ),
@@ -109,11 +107,11 @@ class _AccountDetailsState extends State<AccountDetails> {
                       ],
                     ),
                   ),
-                  Text('Sheikh Name',style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
+                  Text(TKeys.sheikhName.translate(context),style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
                   Padding(
                     padding: EdgeInsets.only(left: width * .05,bottom: 10),
                     child: Container(
-                      padding: const EdgeInsets.only(left: 15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
                       child: TextFormField(
                         enabled: false,
@@ -139,11 +137,11 @@ class _AccountDetailsState extends State<AccountDetails> {
                       ),
                     ),
                   ),
-                  Text('Email',style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
+                  Text(TKeys.email.translate(context),style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
                   Padding(
                     padding: EdgeInsets.only(left: width * .05,bottom: 10),
                     child: Container(
-                      padding: const EdgeInsets.only(left: 15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
                       child: TextFormField(
                         enabled: false,
@@ -169,11 +167,11 @@ class _AccountDetailsState extends State<AccountDetails> {
                       ),
                     ),
                   ),
-                  Text('Phone Number',style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
+                  Text(TKeys.phone.translate(context),style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
                   Padding(
                     padding: EdgeInsets.only(left: width * .05,bottom: 10),
                     child: Container(
-                      padding: const EdgeInsets.only(left: 15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
                       child: TextFormField(
                         enabled: false,
@@ -199,11 +197,11 @@ class _AccountDetailsState extends State<AccountDetails> {
                       ),
                     ),
                   ),
-                  Text('Area',style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
+                  Text(TKeys.area.translate(context),style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
                   Padding(
                     padding: EdgeInsets.only(left: width * .05,bottom: 10),
                     child: Container(
-                      padding: const EdgeInsets.only(left: 15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
                       child: TextFormField(
                         enabled: false,
@@ -229,11 +227,11 @@ class _AccountDetailsState extends State<AccountDetails> {
                       ),
                     ),
                   ),
-                  Text('Mosque',style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
+                  Text(TKeys.mosque.translate(context),style: TextStyle(fontSize:20,color: Colors.brown.shade700,),),
                   Padding(
                     padding: EdgeInsets.only(left: width * .05,bottom: 10),
                     child: Container(
-                      padding: const EdgeInsets.only(left: 15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
                       child: TextFormField(
                         enabled: false,

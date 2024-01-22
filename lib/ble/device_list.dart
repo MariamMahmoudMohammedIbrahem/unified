@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:azan/ble/scan.dart';
 import 'package:azan/register/login.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
@@ -73,17 +73,67 @@ class Scanning extends StatefulWidget {
   State<Scanning> createState() => _ScanningState();
 }
 
+/*class BleStatusNotifier extends ChangeNotifier {
+  BleStatus? _status;
+
+  BleStatus? get status => _status;
+
+  void updateStatus(BleStatus? newStatus) {
+    _status = newStatus;
+    notifyListeners();
+  }
+}
+
+// In your widget tree, where you provide the BleStatusNotifier:
+final BleStatusNotifier bleStatusNotifier = BleStatusNotifier();*/
+final FlutterReactiveBle _ble = ble;
 class _ScanningState extends State<Scanning> {
   void _startScanning(){
-  if (!widget.scannerState.scanIsInProgress) {
-    widget.startScan([]);
-  }
+    if(_ble.status == BleStatus.ready){
+      if (!widget.scannerState.scanIsInProgress) {
+        print('here');
+        widget.startScan([]);
+      }
+    }
+    else{
+      _showBleNotReadyAlertDialog(context);
+    }
+
   Future.delayed(const Duration(seconds: 2), () {
     if (found) {
+      widget.stopScan();
       connect();
     }
   });
 }
+
+  void _showBleNotReadyAlertDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.bleStatusTitle.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          content: Text(TKeys.bleStatusHeadline.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          actions: <Widget>[
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade200,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void connect() {
     for (var device in widget.scannerState.discoveredDevices) {
       widget.deviceConnector.connect(device.id);
@@ -127,11 +177,12 @@ class _ScanningState extends State<Scanning> {
       barrierDismissible: true, // user must not tap button!
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Skip Scanning process', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.skip.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text('Are you sure want to continue without connecting to your device?', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+                Text(TKeys.confirmSkipping.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
               ],
             ),
           ),
@@ -142,7 +193,7 @@ class _ScanningState extends State<Scanning> {
                   backgroundColor: Colors.brown.shade200,
                   disabledForegroundColor: Colors.brown.shade600,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text('Continue Scanning',style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
+              child: Text(TKeys.scanning.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
               onPressed: () {
                 Navigator.of(context).pop();
                 _startScanning();
@@ -154,8 +205,9 @@ class _ScanningState extends State<Scanning> {
                   backgroundColor: Colors.brown.shade600,
                   disabledForegroundColor: Colors.brown.shade600,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: const Text('Skip', style: TextStyle(color: Colors.white, fontSize: 18),),
+              child: Text(TKeys.skip.translate(context), style: const TextStyle(color: Colors.white, fontSize: 18),),
               onPressed: () {
+                Navigator.of(context).pop();
                 Navigator.push<void>(
                   context,
                   MaterialPageRoute(
@@ -184,10 +236,11 @@ class _ScanningState extends State<Scanning> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Confirm Logging Out'),
-              content: Text('Do you really want to Log Out?'),
+              backgroundColor: Colors.brown.shade50,
+              title: Text(TKeys.confirmLogOutTitle.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+              content: Text(TKeys.confirmLogOutHeadline.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
               actions: [
-                TextButton(
+                ElevatedButton(
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
                       context,
@@ -195,13 +248,23 @@ class _ScanningState extends State<Scanning> {
                           builder: (context) => const LogIn()),
                           (route) => false,);
                   },
-                  child: Text('Yes'),
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade200,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: Text(TKeys.yes.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
                 ),
-                TextButton(
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: Text(TKeys.no.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
                   onPressed: () {
                     Navigator.of(context).pop(false);
                   },
-                  child: Text('No'),
                 ),
               ],
             );
@@ -249,7 +312,7 @@ class _ScanningState extends State<Scanning> {
                       backgroundColor: Colors.brown.shade600,
                       disabledForegroundColor: Colors.brown.shade600,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
-                    child: Text(widget.scannerState.scanIsInProgress?'Scanning':'Scan',style: const TextStyle(color: Colors.white, fontSize: 24),),
+                    child: Text(widget.scannerState.scanIsInProgress?TKeys.scanning.translate(context):TKeys.scan.translate(context),style: const TextStyle(color: Colors.white, fontSize: 24),),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -261,22 +324,9 @@ class _ScanningState extends State<Scanning> {
                         backgroundColor: Colors.brown.shade600,
                         disabledForegroundColor: Colors.brown.shade600,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
-                    child: const Text('Skip',style: TextStyle(color: Colors.white, fontSize: 24),),
+                    child: Text(TKeys.skip.translate(context),style: const TextStyle(color: Colors.white, fontSize: 24),),
                   ),
-                  Visibility(visible:!widget.scannerState.scanIsInProgress,child: Text(found?'Connecting to $deviceName':'Can\'t Find the Device',style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red.shade800),),),
-                  // ElevatedButton(
-                  //   onPressed: () async {
-                  //     try {
-                  //       QuerySnapshot Cities = await FirebaseFirestore.instance.collection('Cities').get();
-                  //       if (Cities.docs.isNotEmpty) {
-                  //         List locationIds = Cities.docs.map((doc) => doc.id).toList();
-                  //         print(locationIds);
-                  //       }
-                  //     } catch (e) {
-                  //       print('Error retrieving documents: $e');
-                  //     }
-                  //   },
-                  //   child: const Text('compose packet'),),
+                  Visibility(visible:!widget.scannerState.scanIsInProgress,child: Text(found?'${TKeys.connect.translate(context)} $deviceName':TKeys.notFound.translate(context),style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red.shade800),),),
                 ],
               ),
           ),
@@ -284,259 +334,5 @@ class _ScanningState extends State<Scanning> {
         ),
       ),
     );
-    // return Scaffold(
-    //   body: ListView(children: [
-    //     Column(
-    //       mainAxisAlignment: MainAxisAlignment.center,
-    //       crossAxisAlignment: CrossAxisAlignment.center,
-    //       children: [
-    //         Row(
-    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    //           children: [
-    //             Container(
-    //               width: width * .4,
-    //               height: height * .1,
-    //               decoration: BoxDecoration(
-    //                 borderRadius: BorderRadius.circular(20.0),
-    //                 border: Border.all(
-    //                   width: 2,
-    //                   color: Colors.grey,
-    //                 ),
-    //               ),
-    //               padding: EdgeInsets.symmetric(
-    //                   horizontal: width * .05, vertical: width * .03),
-    //               child: Column(
-    //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    //                 children: [
-    //                   Row(
-    //                     children: [
-    //                       const Icon(Icons.date_range_outlined),
-    //                       const SizedBox(
-    //                         width: 5,
-    //                       ),
-    //                       Text(formattedDate),
-    //                     ],
-    //                   ),
-    //                   Row(
-    //                     children: [
-    //                       const Icon(Icons.hourglass_bottom_outlined),
-    //                       const SizedBox(
-    //                         width: 5,
-    //                       ),
-    //                       Text(formattedTime),
-    //                     ],
-    //                   )
-    //                 ],
-    //               ),
-    //             ),
-    //             Container(
-    //               width: width * .4,
-    //               height: height * .1,
-    //               decoration: BoxDecoration(
-    //                 borderRadius: BorderRadius.circular(20.0),
-    //                 border: Border.all(
-    //                   width: 2,
-    //                   color: Colors.grey,
-    //                 ),
-    //               ),
-    //               padding: EdgeInsets.symmetric(
-    //                   horizontal: width * .05, vertical: width * .03),
-    //               child: Column(
-    //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    //                 children: [
-    //                   Row(
-    //                     children: [
-    //                       const Icon(Icons.date_range_outlined),
-    //                       const SizedBox(
-    //                         width: 5,
-    //                       ),
-    //                       Text('$day / $month / $year'),
-    //                     ],
-    //                   ),
-    //                   Row(
-    //                     children: [
-    //                       const Icon(Icons.hourglass_bottom_outlined),
-    //                       const SizedBox(
-    //                         width: 5,
-    //                       ),
-    //                       Text('$hour:$minute'),
-    //                     ],
-    //                   )
-    //                 ],
-    //               ),
-    //             ),
-    //           ],
-    //         ),
-    //         Row(
-    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    //           children: [
-    //             ElevatedButton(
-    //                 onPressed: () async {
-    //                   _startScanning();
-    //                   await Future.delayed(const Duration(seconds: 5));
-    //                   widget.stopScan();
-    //                   connect();
-    //                 },
-    //                 child: const Text('scan')),
-    //             ElevatedButton(
-    //               onPressed: getAllDataAndSubscribe,
-    //               child: const Text('get all data'),
-    //             ),
-    //           ],
-    //         ),
-    //         Row(
-    //           children: [
-    //             Text('Device Name: $deviceName'),
-    //             Icon(connected ? Icons.done_all : Icons.remove_done),
-    //           ],
-    //         ),
-    //         Padding(
-    //           padding:
-    //               EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
-    //           child: Container(
-    //             decoration: BoxDecoration(
-    //               borderRadius: BorderRadius.circular(20.0),
-    //               border: Border.all(
-    //                 width: 2,
-    //                 color: Colors.grey,
-    //               ),
-    //             ),
-    //             child: ListTile(
-    //               title: const Text('Location'),
-    //               trailing: const Icon(Icons.arrow_drop_down),
-    //               onTap: () {
-    //                 setState(() {
-    //                   locationContainer = !locationContainer;
-    //                 });
-    //               },
-    //             ),
-    //           ),
-    //         ),
-    //         Visibility(
-    //           visible: locationContainer,
-    //           child: Column(
-    //             children: [
-    //               Text('$locationList'),
-    //             ],
-    //           ),
-    //         ),
-    //         Padding(
-    //           padding:
-    //               EdgeInsets.symmetric(horizontal: width * 0.07, vertical: 10),
-    //           child: Container(
-    //             decoration: BoxDecoration(
-    //               borderRadius: BorderRadius.circular(20.0),
-    //               border: Border.all(
-    //                 width: 2,
-    //                 color: Colors.grey,
-    //               ),
-    //             ),
-    //             child: ListTile(
-    //               title: const Text('Prays Times'),
-    //               trailing: const Icon(Icons.arrow_drop_down),
-    //               onTap: () {
-    //                 setState(() {
-    //                   prayContainer = !prayContainer;
-    //                 });
-    //               },
-    //             ),
-    //           ),
-    //         ),
-    //         Visibility(
-    //           visible: prayContainer,
-    //           child: Text('$prayList'),
-    //         ),
-    //         Text('$zoneList'),
-    //         Row(
-    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    //           children: [
-    //             ElevatedButton(
-    //               onPressed: () {
-    //                 writeData(getSound1);
-    //               },
-    //               child: const Text('sound 1'),
-    //             ),
-    //             ElevatedButton(
-    //               onPressed: () {
-    //                 writeData(getSound2);
-    //               },
-    //               child: const Text('sound 2'),
-    //             ),
-    //           ],
-    //         ),
-    //         Row(
-    //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    //           children: [
-    //             ElevatedButton(
-    //               onPressed: () {
-    //                 writeData(getSound3);
-    //               },
-    //               child: const Text('sound 3'),
-    //             ),
-    //             ElevatedButton(
-    //               onPressed: () {
-    //                 writeData(getSound4);
-    //               },
-    //               child: const Text('sound 4'),
-    //             ),
-    //           ],
-    //         ),
-    //         const Text('Setting Data'),
-    //         ElevatedButton(
-    //           onPressed: () {
-    //             writeData(setDate);
-    //           },
-    //           child: const Text(
-    //             'Date',
-    //           ),
-    //         ),
-    //         ElevatedButton(
-    //           onPressed: () async {
-    //             try {
-    //               // Write without response
-    //               await widget.writeWithoutResponse(
-    //                 QualifiedCharacteristic(
-    //                   characteristicId:
-    //                       Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-    //                   serviceId:
-    //                       Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-    //                   deviceId: _deviceId,
-    //                 ),
-    //                 restart,
-    //               );
-    //
-    //               // Subscribe to characteristic
-    //               await widget.subscribeToCharacteristic(
-    //                 QualifiedCharacteristic(
-    //                   characteristicId:
-    //                       Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-    //                   serviceId:
-    //                       Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-    //                   deviceId: _deviceId,
-    //                 ),
-    //               );
-    //
-    //               // Read characteristic
-    //               // await widget.readCharacteristic(
-    //               //   QualifiedCharacteristic(
-    //               //     characteristicId:
-    //               //         Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-    //               //     serviceId:
-    //               //         Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-    //               //     deviceId: _deviceId,
-    //               //   ),
-    //               // );
-    //             } catch (error) {
-    //               print('Error: $error');
-    //             }
-    //           },
-    //           child: const Text(
-    //             'Restart',
-    //           ),
-    //         ),
-    //       ],
-    //     ),
-    //   ]),
-    // );
   }
 }

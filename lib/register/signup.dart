@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:azan/register/login.dart';
 import 'package:azan/register/register.dart';
+import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -73,7 +74,7 @@ class _SignUpState extends State<SignUp> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.email, color: Colors.brown.shade700,),
-                    labelText: 'Email',
+                    labelText: TKeys.email.translate(context),
                     floatingLabelStyle: MaterialStateTextStyle.resolveWith(
                             (Set<MaterialState> states) {
                           final Color color = states.contains(MaterialState.error)
@@ -108,7 +109,7 @@ class _SignUpState extends State<SignUp> {
                 controller: userController,
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.people, color: Colors.brown.shade700,),
-                  labelText: 'UserName',
+                  labelText: TKeys.userName.translate(context),
                   floatingLabelStyle: MaterialStateTextStyle.resolveWith(
                           (Set<MaterialState> states) {
                         final Color color = states.contains(MaterialState.error)
@@ -144,7 +145,7 @@ class _SignUpState extends State<SignUp> {
                   });
                 },
               ),
-              Visibility(visible:userConfirm ,child: Text('this username is in use',style: TextStyle(color: Colors.red),)),
+              Visibility(visible:userConfirm ,child: Text(TKeys.userNameError.translate(context),style: TextStyle(color: Colors.red),)),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
                 child: TextFormField(
@@ -167,7 +168,7 @@ class _SignUpState extends State<SignUp> {
                         }
                       },
                     ),
-                    labelText: 'Password',
+                    labelText: TKeys.password.translate(context),
                     floatingLabelStyle: MaterialStateTextStyle.resolveWith(
                             (Set<MaterialState> states) {
                           final Color color = states.contains(MaterialState.error)
@@ -215,7 +216,7 @@ class _SignUpState extends State<SignUp> {
                             builder: (context) {
                               return AlertDialog(
                                 content: Text(
-                                  'The password provided is too weak.',
+                                  TKeys.weakPassword.translate(context),
                                   style: TextStyle(
                                       color: Colors.red
                                   ),
@@ -229,7 +230,7 @@ class _SignUpState extends State<SignUp> {
                             builder: (context) {
                               return AlertDialog(
                                 content: Text(
-                                  'The account already exists for that email.',
+                                  TKeys.accountExist.translate(context),
                                   style: TextStyle(
                                       color: Colors.red
                                   ),
@@ -245,14 +246,14 @@ class _SignUpState extends State<SignUp> {
                     backgroundColor: Colors.brown.shade600,
                     disabledForegroundColor: Colors.brown.shade600,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
-                  child: const Text('Sign Up', style: TextStyle(color: Colors.white, fontSize: 24,),),
+                  child: Text(TKeys.signUp.translate(context), style: TextStyle(color: Colors.white, fontSize: 24,),),
                 ),
               ),
               TextButton(
                 onPressed: (){
                   Navigator.push(context,MaterialPageRoute(builder: (context)=>const LogIn()));
                 },
-                child: Text('Already Have An Account?',style: TextStyle(color: Colors.red.shade700, fontSize: 18, fontWeight: FontWeight.bold),),
+                child: Text(TKeys.accountAvailable.translate(context),style: TextStyle(color: Colors.red.shade700, fontSize: 18, fontWeight: FontWeight.bold),),
               ),
             ],
           ),

@@ -4,12 +4,16 @@ import 'dart:ui';
 import 'package:azan/functions.dart';
 import 'package:azan/register/resetPassword.dart';
 import 'package:azan/register/signup.dart';
+import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 import '../ble/device_list.dart';
 import '../constants.dart';
+import '../localization_service.dart';
 
 class LogIn extends StatefulWidget {
   const LogIn({super.key});
@@ -23,6 +27,107 @@ class _LogInState extends State<LogIn> {
   final passwordController = TextEditingController();
   late String emailUser;
   late String password;
+  Future<void> _loginUser(BuildContext context) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text('Logging in...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailUser,
+        password: password,
+      );
+
+      if (userCredential != null) {
+        final userSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('user email', isEqualTo: emailUser)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          final username = userSnapshot.docs.first.id;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ScanningListScreen(userName: username),
+            ),
+                (route) => false,
+          );
+        } else {
+          setState(() {
+            notFound = true;
+          });
+          // Hide loading dialog
+          Navigator.pop(context);
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle FirebaseAuthException
+      print('Firebase Auth Error: ${e.code}'); // Print the error code
+      print('Firebase Auth Error Message: ${e.message}');
+      // Hide loading dialog
+      Navigator.pop(context);
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text(TKeys.loginError.translate(context)),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      // Handle other exceptions
+      print('Other Error: $e');
+      // Hide loading dialog
+      Navigator.pop(context);
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: const Text('Error', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          content: const Text('An unexpected error occurred. Please try again.', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+  final localizationController = Get.find<LocalizationController>();
+  @override
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -67,7 +172,7 @@ class _LogInState extends State<LogIn> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       prefixIcon: Icon(Icons.people, color: Colors.brown.shade700,),
-                      labelText: 'Email',
+                      labelText: TKeys.email.translate(context),
                       floatingLabelStyle: MaterialStateTextStyle.resolveWith(
                           (Set<MaterialState> states) {
                             final Color color = states.contains(MaterialState.error)
@@ -119,7 +224,7 @@ class _LogInState extends State<LogIn> {
                             }
                           },
                         ),
-                        labelText: 'password',
+                        labelText: TKeys.password.translate(context),
                         floatingLabelStyle: MaterialStateTextStyle.resolveWith(
                                 (Set<MaterialState> states) {
                               final Color color = states.contains(MaterialState.error)
@@ -150,7 +255,7 @@ class _LogInState extends State<LogIn> {
                   ),
                   Visibility(
                     visible: notFound,
-                    child: Text('The email is not found'),
+                    child: Text(TKeys.emailError.translate(context)),
                   ),
                   Align(
                     alignment: Alignment.centerRight,
@@ -162,7 +267,7 @@ class _LogInState extends State<LogIn> {
                                 builder: (context) => const ResetPassword()));
                       },
                       child: Text(
-                        'Forget Password?',
+                        TKeys.forgetPassword.translate(context),
                         style: TextStyle(color: Colors.red.shade700, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -170,54 +275,53 @@ class _LogInState extends State<LogIn> {
                   SizedBox(
                     width: width*.8,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          final userCredential = await FirebaseAuth.instance
-                              .signInWithEmailAndPassword(
-                                  email: emailUser, password: password);
-                          // print('email1 $emailUser');
-                          if (userCredential != null) {
-                            setState(() {
-                              notFound = false;
-                            });
-                            final userSnapshot = await FirebaseFirestore.instance
-                                .collection('users')
-                                .where('user email', isEqualTo: emailUser)
-                                .get();
-                            // print('pass $password');
-                            print('$userSnapshot');
-                            if (userSnapshot.docs.isNotEmpty) {
-                              final username = userSnapshot.docs.first.id;
-                              // print('Username: $username');
-                              Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => ScanningListScreen(
-                                            userName: username,
-                                          )),
-                                    (route) => false,);
-                            } else {
-                              setState(() {
-                                notFound = true;
-                              });
-                            }
-                          }
-                        } on FirebaseAuthException catch (e) {
-                          // Handle FirebaseAuthException
-                          print(
-                              'Firebase Auth Error: ${e.code}'); // Print the error code
-                          print('Firebase Auth Error Message: ${e.message}');
-                        } catch (e) {
-                          // Handle other exceptions
-                          print('Other Error: $e');
-                        }
-                      },
+                      // onPressed: () async {
+                      //   try {
+                      //     final userCredential = await FirebaseAuth.instance
+                      //         .signInWithEmailAndPassword(
+                      //             email: emailUser, password: password);
+                      //     // print('email1 $emailUser');
+                      //     if (userCredential != null) {
+                      //       setState(() {
+                      //         notFound = false;
+                      //       });
+                      //       final userSnapshot = await FirebaseFirestore.instance
+                      //           .collection('users')
+                      //           .where('user email', isEqualTo: emailUser)
+                      //           .get();
+                      //       if (userSnapshot.docs.isNotEmpty) {
+                      //         final username = userSnapshot.docs.first.id;
+                      //         // print('Username: $username');
+                      //         Navigator.pushAndRemoveUntil(
+                      //             context,
+                      //             MaterialPageRoute(
+                      //                 builder: (context) => ScanningListScreen(
+                      //                       userName: username,
+                      //                     )),
+                      //               (route) => false,);
+                      //       } else {
+                      //         setState(() {
+                      //           notFound = true;
+                      //         });
+                      //       }
+                      //     }
+                      //   } on FirebaseAuthException catch (e) {
+                      //     // Handle FirebaseAuthException
+                      //     print(
+                      //         'Firebase Auth Error: ${e.code}'); // Print the error code
+                      //     print('Firebase Auth Error Message: ${e.message}');
+                      //   } catch (e) {
+                      //     // Handle other exceptions
+                      //     print('Other Error: $e');
+                      //   }
+                      // },
+                      onPressed: () => _loginUser(context),
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.brown,
                         backgroundColor: Colors.brown.shade600,
                         disabledForegroundColor: Colors.brown.shade600,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
-                      child: const Text('Log In', style: TextStyle(color: Colors.white, fontSize: 24,),),
+                      child: Text(TKeys.login.translate(context), style: TextStyle(color: Colors.white, fontSize: 24,),),
                     ),
                   ),
                   TextButton(
@@ -228,7 +332,7 @@ class _LogInState extends State<LogIn> {
                               builder: (context) => const SignUp()));
                     },
                     child: Text(
-                      'Don\'t Have An Account?',
+                      TKeys.noAccount.translate(context),
                       style: TextStyle(color: Colors.red.shade700, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),

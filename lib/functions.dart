@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/src/widgets/framework.dart';
 import 'package:location/location.dart';
 
 import 'package:intl/intl.dart';
@@ -86,36 +88,6 @@ int calculateChecksum(List<int> packet, int start, int end) {
   return checksum;
 }
 
-// void getLocationData() async {
-//   Location location = Location();
-//   bool _serviceEnabled;
-//   PermissionStatus _permissionGranted;
-//   LocationData _locationData;
-//
-//   _serviceEnabled = await location.serviceEnabled();
-//   if (!_serviceEnabled) {
-//     _serviceEnabled = await location.requestService();
-//     if (!_serviceEnabled) {
-//       // Handle if location service is not enabled
-//       return;
-//     }
-//   }
-//
-//   _permissionGranted = await location.hasPermission();
-//   if (_permissionGranted == PermissionStatus.denied) {
-//     _permissionGranted = await location.requestPermission();
-//     if (_permissionGranted != PermissionStatus.granted) {
-//       // Handle if location permission is not granted
-//       return;
-//     }
-//   }
-//
-//   _locationData = await location.getLocation();
-//   // Now _locationData contains latitude and longitude
-//   double? latitude = _locationData.latitude;
-//   double? longitude = _locationData.longitude;
-//   print('Latitude: $latitude, Longitude: $longitude');
-// }
 num convertToInt(List<int> data, int start, int size) {
   final buffer = List<int>.filled(size, 0);
   int converted = 0;
@@ -156,6 +128,15 @@ void getDocumentIDs() async {
     }
   } catch (e) {
     print('Error retrieving documents: $e');
+  }
+}
+void getMosquesList(String value) async{
+  QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Cities').doc(value).collection('Mosques').get();
+  if (querySnapshot.docs.isNotEmpty) {
+    dataList = querySnapshot.docs.map((doc) => doc.id).toSet();
+  }
+  else{
+    dataList = {};
   }
 }
 void getLongitude() async {
@@ -266,20 +247,21 @@ Future<void> saveSettingData(int dataType, String userName) async{
           'city': area,
           });
       //delete the doc and set another one in users
-      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(area).set(
-          {
-            'mosque': mosque,
-            'date': '$setDay/$setMonth/$setYear',
-            'time': formattedTime,
-            'zone': zoneAfter,
-            'longitude': storedLongitude,
-            'latitude': storedLatitude,
-            'fajr': '$fajrHour/$fajrMinute',
-            'duhr': '$duhrHour/$duhrMinute',
-            'asr': '$asrHour/$asrMinute',
-            'maghreb': '$maghrebHour/$maghrebMinute',
-            'isha': '$ishaHour/$ishaMinute',
-          });
+      final QuerySnapshot subcollectionSnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').get();
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(subcollectionSnapshot.docs.first.id).delete().then((value) async => await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(area).set(
+  {
+  'mosque': mosque,
+  'date': '$setDay/$setMonth/$setYear',
+  'time': formattedTime,
+  'zone': zoneAfter,
+  'longitude': storedLongitude,
+  'latitude': storedLatitude,
+  'fajr': '$fajrHour/$fajrMinute',
+  'duhr': '$duhrHour/$duhrMinute',
+  'asr': '$asrHour/$asrMinute',
+  'maghreb': '$maghrebHour/$maghrebMinute',
+  'isha': '$ishaHour/$ishaMinute',
+  })).catchError((error){print('error deleting doc $error');});
       break;
     case 3:
       //set zone
@@ -316,5 +298,28 @@ Future<void> saveSettingData(int dataType, String userName) async{
             'date of mobile':'$setYear/$setMonth/$setDay',
           });
       break;
+  }
+}
+//get data from firebase in skiping scanning
+Future<void> skipData(String userId)async{
+  QuerySnapshot  querySnapshot = await firestore.collection('users').get();
+  if(querySnapshot.docs.isNotEmpty){
+    for(String id in usersIDs){
+      if(id.endsWith(userId)) {
+        DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).collection('Cities').doc(area).get();
+        if (userSnapshot.exists) {
+          Map<String, dynamic>? userData = userSnapshot.data() as Map<String, dynamic>?;
+          if (userData != null && userData.isNotEmpty) {
+            fajr = userData['fajr'];
+            duhr = userData['duhr'];
+            asr = userData['asr'];
+            maghreb = userData['maghreb'];
+            isha = userData['isha'];
+            formattedDateUnit = userData['date'];
+            formattedTimeUnit = userData['time'];
+          }
+        }
+      }
+    }
   }
 }

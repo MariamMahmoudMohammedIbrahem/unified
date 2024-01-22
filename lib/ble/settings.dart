@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:azan/ble/scan.dart';
+import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:functional_data/functional_data.dart';
@@ -231,9 +232,7 @@ class _SettingState extends State<Setting> {
               print('3$event');
               if (event.length == 13) {
                 // locationList = List.from(event);
-                // unitLatitude = int.parse('${event[3].toString().padLeft(2, '0')}${event[4].toString().padLeft(2, '0')}${event[5].toString().padLeft(2, '0')}${event[6].toString().padLeft(2, '0')}');
                 unitLatitude = convertToInt(event, 3, 4);
-                // unitLongitude = int.parse('${event[7].toString().padLeft(2, '0')}${event[8].toString().padLeft(2, '0')}${event[9].toString().padLeft(2, '0')}${event[10].toString().padLeft(2, '0')}');
                 unitLongitude = convertToInt(event, 7, 4);
                 list3 = true;
                 awaitingResponse = false;
@@ -273,6 +272,7 @@ class _SettingState extends State<Setting> {
     ];
 
     for (var data in dataSets) {
+      print('inside hello');
       int dataType = data.keys.first;
       List<int> dataToWrite = data.values.first;
       print('dataType $dataType');
@@ -324,64 +324,282 @@ class _SettingState extends State<Setting> {
     }
     setDate.add(value);
     setDate.add(endFrame);
-    widget.subscribeToCharacteristic(widget.characteristic);
-    await widget.writeWithoutResponse(widget.characteristic, setDate);
-    // Listen for incoming data asynchronously
-    responseSubscription = widget
-        .subscribeToCharacteristic(widget.characteristic)
-        .listen((receivedData) async {
-      if (receivedData.length == success.length &&
-          receivedData.every(
-                  (element) => element == success[receivedData.indexOf(element)])) {
-        print('Received expected data, setting date and time');
-        responseSubscription?.cancel();
-        setDateTime = true;
-        disconnectRestart();
-      }
-    });
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text('Updating...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+    try{
+      widget.subscribeToCharacteristic(widget.characteristic);
+      await widget.writeWithoutResponse(widget.characteristic, setDate);
+      // Listen for incoming data asynchronously
+      responseSubscription = widget
+          .subscribeToCharacteristic(widget.characteristic)
+          .listen((receivedData) async {
+        if (receivedData.length == success.length &&
+            receivedData.every(
+                    (element) => element == success[receivedData.indexOf(element)])) {
+          print('Received expected data, setting date and time');
+          responseSubscription?.cancel();
+          setDateTime = true;
+          disconnectRestart();
+          Navigator.pop(context);
+        }
+        else{
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: Colors.brown.shade50,
+              title: Text(TKeys.error.translate(context)),
+              content: Text('Failed to set date. Please Try Again :('),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+    }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text('Failed to set date. Please Try Again :('),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      );
+    }
+
   }
 
   Future<void> disconnectRestart() async {
-    print('inside the function');
-    await widget.writeWithoutResponse(widget.characteristic, restart);
-    widget.subscribeToCharacteristic(widget.characteristic);
-    await Future.delayed(const Duration(seconds: 1));
-    if (widget.viewModel.connectionStatus ==
-        DeviceConnectionState.disconnected) {
-      setState(() {
-        found = false;
-        deviceName = '';
-      });
-      Navigator.push(
-          context,
-          MaterialPageRoute(
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text('Restarting...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+    try{
+      List<int> dataSets = [1,2,3,4];
+      for (int data in dataSets) {
+        resetDateSubscription(data);
+      }
+      await widget.writeWithoutResponse(widget.characteristic, restart);
+      widget.subscribeToCharacteristic(widget.characteristic);
+      // await Future.delayed(const Duration(seconds: 1));
+      // widget.device.connectable.
+      timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
+        if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
+          setState(() {
+            found = false;
+            deviceName = '';
+            restartFlag = true;
+          });
+
+          // Cancel the timer if the condition is met
+          timer?.cancel();
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
               builder: (context) => ScanningListScreen(
                 userName: widget.userName,
-              ))).then(
-            (value) => restartFlag = true,
+              ),
+            ),
+          );
+        }
+        else{
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: Colors.brown.shade50,
+              title: const Text('wait a minute'),
+              content: Text('${widget.viewModel.connectionStatus}'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+      // if (widget.viewModel.connectionStatus ==
+      //     DeviceConnectionState.disconnected) {
+      //   setState(() {
+      //     found = false;
+      //     deviceName = '';
+      //     restartFlag = true;
+      //   });
+      //   Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (context) => ScanningListScreen(
+      //             userName: widget.userName,
+      //           )));
+      // }
+    }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text('Failed to update. Please Try Again :('),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
       );
     }
+
   }
 
   //problem here
   Future<void> settingLocation() async {
-    print('inside the zft');
-    widget.subscribeToCharacteristic(widget.characteristic);
-    await widget.writeWithoutResponse(widget.characteristic, setLocation);
-    responseSubscription = widget
-        .subscribeToCharacteristic(widget.characteristic)
-        .listen((receivedData) {
-      if (receivedData.length == success.length &&
-          receivedData.every(
-                  (element) => element == success[receivedData.indexOf(element)])) {
-        print('Received expected data, setting date and time');
-        responseSubscription?.cancel();
-        print('ready to get data');
-        //add get all data
-        saveSettingData(2, widget.userName);
-        getAllDataAndSubscribe();
-      }
-    });
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text('Updating...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      widget.subscribeToCharacteristic(widget.characteristic);
+      await widget.writeWithoutResponse(widget.characteristic, setLocation);
+      responseSubscription = widget
+          .subscribeToCharacteristic(widget.characteristic)
+          .listen((receivedData) {
+        if (receivedData.length == success.length &&
+            receivedData.every(
+                    (element) => element == success[receivedData.indexOf(element)])) {
+          print('Received expected data, setting date and time');
+          responseSubscription?.cancel();
+          print('ready to get data');
+          //add get all data
+          awaitingResponse = false;
+          saveSettingData(2, widget.userName);
+          getAllDataAndSubscribe();
+          Navigator.pop(context);
+        }
+        else{
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: Colors.brown.shade50,
+              title: const Text('Error'),
+              content: Text('Failed to log in. Please Try Again :('),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+                ),
+              ],
+            ),
+          );
+        }
+        });
+    }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text('Failed to update. Please Try Again :('),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> settingZone() async {
@@ -431,9 +649,14 @@ class _SettingState extends State<Setting> {
     widget.subscribeToCharacteristic(widget.characteristic);
 
   }
+  void initState(){
+    getAllDataAndSubscribe();
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -475,7 +698,7 @@ class _SettingState extends State<Setting> {
                         SizedBox(
                           width: width*.6,
                           child: AutoSizeText(
-                            'Unit Longitude And Latitude: ',
+                            TKeys.longitudeLatitude.translate(context),
                             style: TextStyle(
                               color: Colors.brown.shade700,
                               fontWeight: FontWeight.bold,
@@ -492,7 +715,7 @@ class _SettingState extends State<Setting> {
                               list3 = false;
                               list4 = false;
                             });
-                            Future.delayed(Duration(seconds: 1));
+                            Future.delayed(const Duration(seconds: 1));
                             periodicTimer = Timer.periodic(
                                 const Duration(seconds: 1), (Timer t) {
                               if (!list1 || !list2 || !list3 || !list4) {
@@ -514,80 +737,84 @@ class _SettingState extends State<Setting> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Container(
-                        width: width * .4,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20.0),
-                          border: Border.all(
-                            width: 2,
-                            color: Colors.brown,
+                      Flexible(
+                        child: Container(
+                          width: width * .4,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20.0),
+                            border: Border.all(
+                              width: 2,
+                              color: Colors.brown,
+                            ),
                           ),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: width * .05, vertical: width * .03),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Unit Data',
-                              style: TextStyle(
-                                  color: Colors.brown.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22),
-                            ),
-                            Text(
-                              'longitude: $unitLongitude',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.brown.shade700),
-                            ),
-                            Text(
-                              'latitude: $unitLatitude',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.brown.shade700),
-                            ),
-                          ],
+                          padding: EdgeInsets.symmetric(
+                              horizontal: width * .05, vertical: width * .03),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                TKeys.unitData.translate(context),
+                                style: TextStyle(
+                                    color: Colors.brown.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22),
+                              ),
+                              Text(
+                                '${TKeys.longitude.translate(context)}: $unitLongitude',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.brown.shade700),
+                              ),
+                              Text(
+                                '${TKeys.latitude.translate(context)}: $unitLatitude',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.brown.shade700),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      Container(
-                        width: width * .4,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20.0),
-                          border: Border.all(
-                            width: 2,
-                            color: Colors.brown,
+                      Flexible(
+                        child: Container(
+                          width: width * .4,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20.0),
+                            border: Border.all(
+                              width: 2,
+                              color: Colors.brown,
+                            ),
                           ),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: width * .05, vertical: width * .03),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Stored Data',
-                              style: TextStyle(
-                                  color: Colors.brown.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22),
-                            ),
-                            Text(
-                              'longitude: $storedLongitude',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.brown.shade700),
-                            ),
-                            Text(
-                              'latitude: $storedLatitude',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.brown.shade700),
-                            ),
-                          ],
+                          padding: EdgeInsets.symmetric(
+                              horizontal: width * .05, vertical: width * .03),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                TKeys.storedData.translate(context),
+                                style: TextStyle(
+                                    color: Colors.brown.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22),
+                              ),
+                              Text(
+                                '${TKeys.longitude.translate(context)}: $storedLongitude',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.brown.shade700),
+                              ),
+                              Text(
+                                '${TKeys.latitude.translate(context)}: $storedLatitude',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.brown.shade700),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -608,16 +835,19 @@ class _SettingState extends State<Setting> {
                   Padding(
                     padding: EdgeInsets.symmetric(
                         horizontal: width * 0.05, vertical: 10),
-                    child: Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Text(
-                          'Zone: ',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          TKeys.zone.translate(context),
                           style: TextStyle(
                             color: Colors.brown.shade700,
                             fontWeight: FontWeight.bold,
                             fontSize: 27,
                           ),
-                        )),
+                        ),
+                      ],
+                    ),
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(
@@ -625,7 +855,7 @@ class _SettingState extends State<Setting> {
                     child: Row(
                       children: [
                         Text(
-                          'Current Zone: ',
+                          TKeys.currentZone.translate(context),
                           style: TextStyle(
                             color: Colors.brown.shade700,
                             fontWeight: FontWeight.bold,
@@ -655,16 +885,19 @@ class _SettingState extends State<Setting> {
                   Padding(
                     padding: EdgeInsets.symmetric(
                         horizontal: width * 0.05, vertical: 10),
-                    child: Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Text(
-                          'Settings Options: ',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          TKeys.settingOptions.translate(context),
                           style: TextStyle(
                             color: Colors.brown.shade700,
                             fontWeight: FontWeight.bold,
                             fontSize: 27,
                           ),
-                        )),
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(
                     width: width * .8,
@@ -682,9 +915,9 @@ class _SettingState extends State<Setting> {
                         Icons.settings_backup_restore,
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Setting Prayer Times',
-                        style: TextStyle(color: Colors.white, fontSize: 24),
+                      label:  Text(
+                        TKeys.settingPrayerTimes.translate(context),
+                        style: const TextStyle(color: Colors.white, fontSize: 24),
                       ),
                     ),
                   ),
@@ -735,7 +968,7 @@ class _SettingState extends State<Setting> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  area == '' ? 'Select An Area' : area,
+                                  area == '' ? TKeys.selectArea.translate(context) : area,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -770,9 +1003,9 @@ class _SettingState extends State<Setting> {
                         Icons.settings_backup_restore,
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Setting Unit Location',
-                        style: TextStyle(color: Colors.white, fontSize: 24),
+                      label: Text(
+                        TKeys.settingUnitLocation.translate(context),
+                        style: const TextStyle(color: Colors.white, fontSize: 24),
                       ),
                     ),
                   ),
@@ -793,9 +1026,9 @@ class _SettingState extends State<Setting> {
                         Icons.settings_backup_restore,
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Setting Unit Zone',
-                        style: TextStyle(color: Colors.white, fontSize: 24),
+                      label: Text(
+                        TKeys.settingUnitZone.translate(context),
+                        style: const TextStyle(color: Colors.white, fontSize: 24),
                       ),
                     ),
                   ),
@@ -812,12 +1045,12 @@ class _SettingState extends State<Setting> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10))),
                       icon: const Icon(
-                        Icons.settings_backup_restore,
+                        Icons.auto_mode_outlined,
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Enter Test Mode',
-                        style: TextStyle(color: Colors.white, fontSize: 24),
+                      label: Text(
+                        TKeys.testMode.translate(context),
+                        style: const TextStyle(color: Colors.white, fontSize: 24),
                       ),
                     ),
                   ),
@@ -837,9 +1070,9 @@ class _SettingState extends State<Setting> {
                         Icons.restart_alt,
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Restarting The Unit',
-                        style: TextStyle(
+                      label: Text(
+                        TKeys.restart.translate(context),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
                         ),
@@ -866,7 +1099,7 @@ class _SettingState extends State<Setting> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Sound Options: ',
+                          TKeys.soundOptions.translate(context),
                           style: TextStyle(
                             color: Colors.brown.shade700,
                             fontWeight: FontWeight.bold,
@@ -924,7 +1157,7 @@ class _SettingState extends State<Setting> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  sound == '' ? 'Select A Sound' : sound,
+                                  sound == '' ? TKeys.selectSound.translate(context) : sound,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

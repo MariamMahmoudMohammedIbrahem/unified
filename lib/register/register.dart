@@ -1,15 +1,13 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:ui';
 
+import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../ble/device_list.dart';
 import '../constants.dart';
-import '../feedback/feedback1.dart';
 import '../functions.dart';
 
 class Register extends StatefulWidget {
@@ -26,14 +24,12 @@ class _RegisterState extends State<Register> {
   final mosqueController = TextEditingController();
   final areaController = TextEditingController();
   final sheikhController = TextEditingController();
-  TextEditingController _otherController = TextEditingController();
   List<String> options = [];
-  String _selectedOption = '';
-  final _auth = FirebaseAuth.instance;
   late String sheikhName;
   late String phone;
   late String area = '';
   late String mosque = '';
+  @override
   void initState() {
     super.initState();
     // getCurrentDateTime();
@@ -44,18 +40,6 @@ class _RegisterState extends State<Register> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    List<DropdownMenuItem<String>> dropdownItems = citiesIDs
-        .map<DropdownMenuItem<String>>((String option) {
-      return DropdownMenuItem<String>(
-        value: option,
-        child: Text(option),
-      );
-    }).toList();
-
-    dropdownItems.add(DropdownMenuItem<String>(
-      value: 'Other',
-      child: Text('Other'),
-    ));
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -102,7 +86,7 @@ class _RegisterState extends State<Register> {
                       controller: sheikhController,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.people, color: Colors.white,),
-                        label: const Text('Sheikh Name', style: TextStyle(color: Colors.white),) ,
+                        label: Text(TKeys.sheikhName.translate(context), style: const TextStyle(color: Colors.white),) ,
                         floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                           final Color color = states.contains(MaterialState.error)
                               ? Theme.of(context).colorScheme.error
@@ -145,8 +129,8 @@ class _RegisterState extends State<Register> {
                     ],
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.phone, color: Colors.white,),
-                      label: const Text('Phone',style: TextStyle(color: Colors.white),),
-                      error: Text('${validatePhoneNumber(phoneController.text)}',style: TextStyle(color: Colors.white),),
+                      label: Text(TKeys.phone.translate(context),style: const TextStyle(color: Colors.white),),
+                      error: Text('${validatePhoneNumber(phoneController.text)}',style: const TextStyle(color: Colors.white),),
                       floatingLabelStyle: TextStyle(color: Colors.brown.shade900, letterSpacing: 1.3),
                       labelStyle: TextStyle(color: Colors.brown.shade800, letterSpacing: 1.3),
                       focusedBorder: const UnderlineInputBorder(
@@ -211,9 +195,9 @@ class _RegisterState extends State<Register> {
                             value: 'Other',
                             child: Row(
                               children: [
-                                const Text(
-                                  'Other',
-                                  style: TextStyle(
+                                Text(
+                                  TKeys.other.translate(context),
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -224,7 +208,7 @@ class _RegisterState extends State<Register> {
                                     controller: areaController,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(Icons.area_chart_outlined,color: Colors.white,),
-                                      label: const Text('Area',style: TextStyle(color: Colors.white),),
+                                      label: Text(TKeys.area.translate(context),style: const TextStyle(color: Colors.white),),
                                       floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                                         final Color color = states.contains(MaterialState.error)
                                             ? Theme.of(context).colorScheme.error
@@ -269,7 +253,7 @@ class _RegisterState extends State<Register> {
                           children: [
                             Expanded(
                               child: Text(
-                                area ==''? 'Select An Area': area,
+                                area ==''? TKeys.selectArea.translate(context): area,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -326,9 +310,9 @@ class _RegisterState extends State<Register> {
                             value: 'Other',
                             child: Row(
                               children: [
-                                const Text(
-                                  'Other',
-                                  style: TextStyle(
+                                Text(
+                                  TKeys.other.translate(context),
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -339,7 +323,7 @@ class _RegisterState extends State<Register> {
                                     controller: mosqueController,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(Icons.mosque_outlined, color: Colors.white,),
-                                      label: const Text('Mosque',style: TextStyle(color: Colors.white),),
+                                      label: Text(TKeys.mosque.translate(context),style: const TextStyle(color: Colors.white),),
                                       floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                                         final Color color = states.contains(MaterialState.error)
                                             ? Theme.of(context).colorScheme.error
@@ -384,7 +368,7 @@ class _RegisterState extends State<Register> {
                           children: [
                             Expanded(
                               child: Text(
-                                mosque ==''? 'Select A Mosque': mosque,
+                                mosque ==''? TKeys.selectMosque.translate(context): mosque,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -427,7 +411,7 @@ class _RegisterState extends State<Register> {
                               'sheikh name': sheikhName,
                             });
                         for(String name in citiesIDs){
-                          if(area!.endsWith(name)){
+                          if(!area.endsWith(name)){
                             await FirebaseFirestore.instance.collection('Cities').doc(area).set(
                                 {
                                   'latitude': '',
@@ -457,6 +441,19 @@ class _RegisterState extends State<Register> {
                       }
                       on FirebaseException catch (e){
                         print('error is => $e');
+                        showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                content: Text(
+                                  TKeys.problemOccurred.translate(context),
+                                  style: const TextStyle(
+                                      color: Colors.red
+                                  ),
+                                ),
+                              );
+                            }
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -464,7 +461,7 @@ class _RegisterState extends State<Register> {
                         backgroundColor: Colors.brown,
                         disabledForegroundColor: Colors.brown.shade600,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                    child: const Text('Sign Up',style: TextStyle(color: Colors.white, fontSize: 24),),
+                    child: Text(TKeys.register.translate(context),style: const TextStyle(color: Colors.white, fontSize: 24),),
                   ),
                 ),
               ],
