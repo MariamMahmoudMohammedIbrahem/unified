@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:functional_data/functional_data.dart';
 import 'package:provider/provider.dart';
 
@@ -186,12 +187,12 @@ class _ConnectingState extends State<Connecting> {
               print('1$event');
               if (event.length == 11) {
                 // dateList = List.from(event);
-                year = convertToInt(event, 3, 1);
+                year = num.parse(convertToInt(event, 3, 1).toString().padLeft(3, '20'));
                 month = convertToInt(event, 4, 1);
                 day = convertToInt(event, 5, 1);
                 hour = convertToInt(event, 6, 1);
-                minute = convertToInt(event, 7, 1);
-                second = convertToInt(event, 8, 1);
+                minute = num.parse(convertToInt(event, 7, 1).toString().padLeft(2, '0'));
+                second = num.parse(convertToInt(event, 8, 1).toString().padLeft(2, '0'));
                 list1 = true;
                 awaitingResponse = false;
               }
@@ -212,15 +213,20 @@ class _ConnectingState extends State<Connecting> {
               if (event.length == 15) {
                 // prayList = List.from(event);
                 fajrHour = convertToInt(event, 3, 1);
-                fajrMinute = convertToInt(event, 4, 1);
+                // fajrMinute = convertToInt(event, 4, 1);
+                fajrMinute = convertToInt(event, 4, 1).toString().padLeft(2, '0');
                 duhrHour = convertToInt(event, 5, 1);
-                duhrMinute = convertToInt(event, 6, 1);
+                // duhrMinute = convertToInt(event, 6, 1);
+                duhrMinute = convertToInt(event, 6, 1).toString().padLeft(2, '0');
                 asrHour = convertToInt(event, 7, 1);
-                asrMinute = convertToInt(event, 8, 1);
+                // asrMinute = convertToInt(event, 8, 1);
+                asrMinute = convertToInt(event, 8, 1).toString().padLeft(2, '0');
                 maghrebHour = convertToInt(event, 9, 1);
-                maghrebMinute = convertToInt(event, 10, 1);
+                // maghrebMinute = convertToInt(event, 10, 1);
+                maghrebMinute = convertToInt(event, 10, 1).toString().padLeft(2, '0');
                 ishaHour = convertToInt(event, 11, 1);
-                ishaMinute = convertToInt(event, 12, 1);
+                // ishaMinute = convertToInt(event, 12, 1);
+                ishaMinute = convertToInt(event, 12, 1).toString().padLeft(2, '0');
                 list2 = true;
                 awaitingResponse = false;
               }
@@ -239,11 +245,9 @@ class _ConnectingState extends State<Connecting> {
             setState(() {
               print('3$event');
               if (event.length == 13) {
-                // locationList = List.from(event);
-                // unitLatitude = int.parse('${event[3].toString().padLeft(2, '0')}${event[4].toString().padLeft(2, '0')}${event[5].toString().padLeft(2, '0')}${event[6].toString().padLeft(2, '0')}');
-                unitLatitude = convertToInt(event, 3, 4);
+                unitLatitude = convertToInt(event, 3, 4)/1000000;
                 // unitLongitude = int.parse('${event[7].toString().padLeft(2, '0')}${event[8].toString().padLeft(2, '0')}${event[9].toString().padLeft(2, '0')}${event[10].toString().padLeft(2, '0')}');
-                unitLongitude = convertToInt(event, 7, 4);
+                unitLongitude = convertToInt(event, 7, 4)/1000000;
                 list3 = true;
                 awaitingResponse = false;
               }
@@ -266,6 +270,7 @@ class _ConnectingState extends State<Connecting> {
                 zoneAfter = convertToInt(event, 3, 1);
                 list4 = true;
                 awaitingResponse = false;
+                showToast = false;
               }
             });
           });
@@ -297,6 +302,8 @@ class _ConnectingState extends State<Connecting> {
     }
   }
   void getAllDataAndSubscribe() async {
+    showToast = true;
+    showToastMessage();
     List<Map<int, List<int>>> dataSets = [
       {1: getDate},
       {2: getPray},
@@ -357,7 +364,7 @@ class _ConnectingState extends State<Connecting> {
   }
 
   void startPeriodicTimer() {
-    hourTimer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
+    hourTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
       updateDateTime(); // Trigger the update asynchronously
     });
   }
@@ -391,6 +398,8 @@ class _ConnectingState extends State<Connecting> {
         print('Received expected data, setting date and time');
         responseSubscription?.cancel();
         setDateTime = true;
+        periodicTimer?.cancel();
+        hourTimer?.cancel();
         disconnectRestart();
       }
     });
@@ -430,10 +439,8 @@ class _ConnectingState extends State<Connecting> {
             deviceName = '';
             restartFlag = true;
           });
-
           // Cancel the timer if the condition is met
           timer?.cancel();
-
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -444,27 +451,6 @@ class _ConnectingState extends State<Connecting> {
           );
         }
         else{
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: Colors.brown.shade50,
-              title: const Text('wait a minute'),
-              content: Text('${widget.viewModel.connectionStatus}'),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade600,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
-                ),
-              ],
-            ),
-          );
         }
       });
       // if (widget.viewModel.connectionStatus ==
@@ -529,6 +515,10 @@ class _ConnectingState extends State<Connecting> {
     setState(() {
       awaitingResponse = false;
       getCurrentDateTime();
+      list1 = false;
+      list2 = false;
+      list3 = false;
+      list4 = false;
     });
     //connect and get data
     periodicTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
@@ -631,9 +621,9 @@ class _ConnectingState extends State<Connecting> {
       },
       child: Scaffold(
         key: _scaffoldKey,
-        extendBodyBehindAppBar: true,
+        extendBodyBehindAppBar: false,
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.brown.shade800,
           leadingWidth: 70,
           leading: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -641,8 +631,7 @@ class _ConnectingState extends State<Connecting> {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.brown
-                    .shade700, // You can change the background color as needed
+                color: Colors.brown.shade50, // You can change the background color as needed
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -652,8 +641,8 @@ class _ConnectingState extends State<Connecting> {
                   },
                   child: Text(
                     initial,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Colors.brown.shade800,
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
                     ),
@@ -800,7 +789,7 @@ class _ConnectingState extends State<Connecting> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => FeedbackRegister(
-                                  name: widget.userName.trim(),
+                                  name: widget.userName,
                                 )));
                   },
                 ),
@@ -882,6 +871,12 @@ class _ConnectingState extends State<Connecting> {
                   onTap: () {
                     //logout
                     _scaffoldKey.currentState?.closeDrawer();
+                    setState(() {
+                      found = false;
+                      deviceName = '';
+                    });
+                    periodicTimer?.cancel();
+                    hourTimer?.cancel();
                     signOut();
                   },
                 ),
@@ -1024,6 +1019,44 @@ class _ConnectingState extends State<Connecting> {
                           )
                         ],
                       ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10.0),
+                      child: SizedBox(
+                        width: width * .7,
+                        child: const Divider(
+                          height: 1,
+                          indent: 0,
+                          endIndent: 10,
+                          thickness: 2,
+                          color: Colors.brown,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * 0.05,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            TKeys.city.translate(context),
+                            style: TextStyle(
+                              color: Colors.brown.shade700,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 27,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: width * .07, vertical: 10),
+                      child: Text(area,
+                        style: TextStyle(
+                            color: Colors.brown.shade800, fontSize: 25, fontWeight: FontWeight.bold),),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 10.0),
@@ -1478,6 +1511,10 @@ class _NotConnectedState extends State<NotConnected> {
               ),
               onTap: () {
                 //logout
+                setState(() {
+                  found = false;
+                  deviceName = '';
+                });
                 signOut();
               },
             ),
@@ -1597,6 +1634,44 @@ class _NotConnectedState extends State<NotConnected> {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    child: SizedBox(
+                      width: width * .7,
+                      child: const Divider(
+                        height: 1,
+                        indent: 0,
+                        endIndent: 10,
+                        thickness: 2,
+                        color: Colors.brown,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: width * 0.05,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          TKeys.city.translate(context),
+                          style: TextStyle(
+                            color: Colors.brown.shade700,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 27,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: width * .07, vertical: 10),
+                    child: Text(area,
+                      style: TextStyle(
+                          color: Colors.brown.shade800, fontSize: 25, fontWeight: FontWeight.bold),),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
                     child: SizedBox(
                       width: width * .7,
                       child: const Divider(

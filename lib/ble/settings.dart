@@ -178,7 +178,7 @@ class _SettingState extends State<Setting> {
               print('1$event');
               if (event.length == 11) {
                 // dateList = List.from(event);
-                year = convertToInt(event, 3, 1);
+                year = num.parse(convertToInt(event, 3, 1).toString().padLeft(3, '20'));
                 month = convertToInt(event, 4, 1);
                 day = convertToInt(event, 5, 1);
                 hour = convertToInt(event, 6, 1);
@@ -204,15 +204,15 @@ class _SettingState extends State<Setting> {
               if (event.length == 15) {
                 // prayList = List.from(event);
                 fajrHour = convertToInt(event, 3, 1);
-                fajrMinute = convertToInt(event, 4, 1);
+                fajrMinute = convertToInt(event, 4, 1).toString().padLeft(2, '0');
                 duhrHour = convertToInt(event, 5, 1);
-                duhrMinute = convertToInt(event, 6, 1);
+                duhrMinute = convertToInt(event, 6, 1).toString().padLeft(2, '0');
                 asrHour = convertToInt(event, 7, 1);
-                asrMinute = convertToInt(event, 8, 1);
+                asrMinute = convertToInt(event, 8, 1).toString().padLeft(2, '0');
                 maghrebHour = convertToInt(event, 9, 1);
-                maghrebMinute = convertToInt(event, 10, 1);
+                maghrebMinute = convertToInt(event, 10, 1).toString().padLeft(2, '0');
                 ishaHour = convertToInt(event, 11, 1);
-                ishaMinute = convertToInt(event, 12, 1);
+                ishaMinute = convertToInt(event, 12, 1).toString().padLeft(2, '0');
                 list2 = true;
                 awaitingResponse = false;
               }
@@ -232,8 +232,8 @@ class _SettingState extends State<Setting> {
               print('3$event');
               if (event.length == 13) {
                 // locationList = List.from(event);
-                unitLatitude = convertToInt(event, 3, 4);
-                unitLongitude = convertToInt(event, 7, 4);
+                unitLatitude = convertToInt(event, 3, 4)/1000000;
+                unitLongitude = convertToInt(event, 7, 4)/1000000;
                 list3 = true;
                 awaitingResponse = false;
               }
@@ -256,6 +256,7 @@ class _SettingState extends State<Setting> {
                 zoneAfter = convertToInt(event, 3, 1);
                 list4 = true;
                 awaitingResponse = false;
+                showToast = false;
               }
             });
           });
@@ -264,6 +265,8 @@ class _SettingState extends State<Setting> {
     }
   }
   void getAllDataAndSubscribe() async {
+    showToast = true;
+    showToastMessage();
     List<Map<int, List<int>>> dataSets = [
       {1: getDate},
       {2: getPray},
@@ -650,26 +653,26 @@ class _SettingState extends State<Setting> {
 
   }
   void initState(){
-    getAllDataAndSubscribe();
     super.initState();
   }
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.brown.shade800,
         leading: IconButton(
           onPressed: (){
             Navigator.pop(context,true);
           },
           icon: Icon(
             Icons.arrow_back,
-            color: Colors.brown.shade800,
+            color: Colors.white,
             size: 35,),
         ),
+        title: Text(TKeys.complain.translate(context),style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 20,),),
+        centerTitle: true,
       ),
       body: Stack(
         children: [
@@ -1115,12 +1118,11 @@ class _SettingState extends State<Setting> {
                       width: width * .8,
                       height: 55,
                       child: PopupMenuButton<String>(
-                        onSelected: (String value) async {
-                          setState(() async {
+                        onSelected: (String value) {
+                          setState(() {
                             sound = value;
-                            //send the sound packet
-                            settingSound(sound);
                           });
+                          settingSound(sound);
                         },
                         color: Colors.brown.shade700,
                         itemBuilder: (BuildContext context) {

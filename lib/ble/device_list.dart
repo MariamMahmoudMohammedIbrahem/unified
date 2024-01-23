@@ -159,6 +159,7 @@ class _ScanningState extends State<Scanning> {
   }
 
   void initState() {
+    getCurrentDateTime();
     setState(() {
       _startScanning();
       getDocumentIDs();

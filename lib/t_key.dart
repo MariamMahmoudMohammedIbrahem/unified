@@ -31,6 +31,8 @@ enum TKeys{
   mosque,
   selectMosque,
   register,
+  //password
+  proceed,
   problemOccurred,
   resetPassword,
   //device_list
@@ -56,6 +58,7 @@ enum TKeys{
   settings,
   logout,
   dateTime,
+  city,
   prayTimes,
   fajr,
   duhr,
@@ -86,9 +89,12 @@ enum TKeys{
   note,
   submit,
   hello,
+  submitError,
+  //accountDetails
   //account edit
   editProfile,
   update,
+  updateError,
 }
 
 //Tkeys.device

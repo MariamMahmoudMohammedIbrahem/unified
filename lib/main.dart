@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:azan/localization_service.dart';
 import 'ble/ble_device_connector.dart';
@@ -15,8 +16,10 @@ import 'ble/ble_scanner.dart';
 import 'ble/ble_status_monitor.dart';
 import 'ble/ble_status_screen.dart';
 import 'firebase_options.dart';
+
 Future<void> main() async {
-  final localizationController = Get.put(LocalizationController(initialLanguage: 'ar'));
+  final localizationController =
+      Get.put(LocalizationController(initialLanguage: 'ar'));
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -37,57 +40,58 @@ Future<void> main() async {
     subscribeToCharacteristic: _ble.subscribeToCharacteristic,
     logMessage: _bleLogger.addToLog,
   );
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider.value(value: _scanner),
-        Provider.value(value: _monitor),
-        Provider.value(value: _connector),
-        Provider.value(value: _serviceDiscoverer),
-        Provider.value(value: _bleLogger),
-        StreamProvider<BleScannerState?>(
-          create: (_) => _scanner.state,
-          initialData: const BleScannerState(
-            discoveredDevices: [],
-            scanIsInProgress: false,
-          ),
+  runApp(MultiProvider(
+    providers: [
+      Provider.value(value: _scanner),
+      Provider.value(value: _monitor),
+      Provider.value(value: _connector),
+      Provider.value(value: _serviceDiscoverer),
+      Provider.value(value: _bleLogger),
+      StreamProvider<BleScannerState?>(
+        create: (_) => _scanner.state,
+        initialData: const BleScannerState(
+          discoveredDevices: [],
+          scanIsInProgress: false,
         ),
-        StreamProvider<BleStatus?>(
-          create: (_) => _monitor.state,
-          initialData: BleStatus.unknown,
+      ),
+      StreamProvider<BleStatus?>(
+        create: (_) => _monitor.state,
+        initialData: BleStatus.unknown,
+      ),
+      StreamProvider<ConnectionStateUpdate>(
+        create: (_) => _connector.state,
+        initialData: const ConnectionStateUpdate(
+          deviceId: 'Unknown device',
+          connectionState: DeviceConnectionState.disconnected,
+          failure: null,
         ),
-        StreamProvider<ConnectionStateUpdate>(
-          create: (_) => _connector.state,
-          initialData: const ConnectionStateUpdate(
-            deviceId: 'Unknown device',
-            connectionState: DeviceConnectionState.disconnected,
-            failure: null,
-          ),
+      ),
+    ],
+    child: GetBuilder<LocalizationController>(
+        init: localizationController,
+        builder: (LocalizationController controller) => MaterialApp(
+              debugShowCheckedModeBanner: false,
+              locale: controller.currentLanguage != ''
+                  ? Locale(controller.currentLanguage, '')
+                  : null,
+              localeResolutionCallback:
+                  LocalizationService.localeResolutionCallBack,
+              supportedLocales: LocalizationService.supportedLocales,
+              localizationsDelegates: const [
+                ...LocalizationService.localizationsDelegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                DefaultCupertinoLocalizations.delegate,
+                FallbackCupertinoLocalisationsDelegate(),
+              ],
+              home: const HomeScreen(),
+            )
+        // child: const MyApp(),
         ),
-      ],
-      child: GetBuilder<LocalizationController>(
-          init: localizationController,
-          builder: (LocalizationController controller )=> MaterialApp(
-            debugShowCheckedModeBanner: false,
-            locale: controller.currentLanguage != ''
-                ? Locale(controller.currentLanguage,'')
-                : null,
-            localeResolutionCallback: LocalizationService.localeResolutionCallBack,
-            supportedLocales: LocalizationService.supportedLocales,
-            localizationsDelegates: const [
-              ...LocalizationService.localizationsDelegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              DefaultCupertinoLocalizations.delegate,
-              FallbackCupertinoLocalisationsDelegate(),
-            ],
-            home: const HomeScreen(),
-          )
-      // child: const MyApp(),
-    ),
   ));
   initializeReactiveBle();
 }
+
 void initializeReactiveBle() {
   final ble = FlutterReactiveBle();
   // You can perform any necessary setup/configuration here
@@ -105,7 +109,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
-        textSelectionTheme: TextSelectionThemeData(selectionHandleColor: Colors.brown.shade700),
+        textSelectionTheme:
+            TextSelectionThemeData(selectionHandleColor: Colors.brown.shade700),
       ),
       home: const HomeScreen(),
     );
@@ -117,18 +122,78 @@ class HomeScreen extends StatelessWidget {
     Key? key,
   }) : super(key: key);
 
-
   @override
   Widget build(BuildContext context) => Consumer<BleStatus?>(
-    builder: (_, status, __) {
-      if (status == BleStatus.ready) {
-        return const LogIn();
-      } else {
-        return BleStatusScreen(status: status ?? BleStatus.unknown);
-      }
-    },
-  );
-
+        builder: (_, status, __) {
+          if (status == BleStatus.ready) {
+            return const LogIn();
+          } else if (status == BleStatus.unauthorized) {
+            return const LocationPermission();
+          } else {
+            return BleStatusScreen(status: status ?? BleStatus.unknown);
+          }
+        },
+      );
 }
 
+class LocationPermission extends StatefulWidget {
+  const LocationPermission({super.key});
 
+  @override
+  State<LocationPermission> createState() => _LocationPermissionState();
+}
+
+class _LocationPermissionState extends State<LocationPermission> {
+  Future<void> _requestLocationPermission() async {
+    PermissionStatus status = await Permission.location.request();
+
+    if (status == PermissionStatus.granted) {
+      // Location permission granted, perform your actions
+      print('Location permission granted');
+    } else {
+      // Location permission denied, show AlertDialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Location Permission Required'),
+            content:
+                Text('Please grant location permission to use this feature.'),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  openAppSettings(); // Opens the app settings page
+                },
+                child: Text('Open Settings'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const BleStatusScreen(status: BleStatus.unauthorized,),
+            ElevatedButton(
+              onPressed: _requestLocationPermission,
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: const Text('Give The Access',style: TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

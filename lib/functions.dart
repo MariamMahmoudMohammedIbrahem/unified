@@ -2,7 +2,9 @@ import 'dart:typed_data';
 
 import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:location/location.dart';
 
 import 'package:intl/intl.dart';
@@ -321,5 +323,16 @@ Future<void> skipData(String userId)async{
         }
       }
     }
+  }
+}
+void showToastMessage() {
+  if (showToast) {
+    Fluttertoast.showToast(
+      msg: 'loading the data!',
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.brown.shade700,
+      textColor: Colors.white,
+    );
   }
 }

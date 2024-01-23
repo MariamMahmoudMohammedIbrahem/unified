@@ -126,7 +126,7 @@ class _ResetPasswordState extends State<ResetPassword> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
                         onPressed: passwordReset,
                         child: Text(
-                          TKeys.resetPassword.translate(context),
+                          TKeys.proceed.translate(context),
                           style: const TextStyle(color: Colors.white, fontSize: 24,),
                         )
                     ),

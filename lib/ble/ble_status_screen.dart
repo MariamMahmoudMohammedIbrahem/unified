@@ -9,17 +9,17 @@ class BleStatusScreen extends StatelessWidget {
   String determineText(BleStatus status) {
     switch (status) {
       case BleStatus.unsupported:
-        return "This device does not support Bluetooth";
+        return "هذا الهاتف لا بدعم البلوتوث";
       case BleStatus.unauthorized:
-        return "Authorize the FlutterReactiveBle example app to use Bluetooth and location";
+        return "تحتاج إلى السماح بالوصول إلى التطبيق لاستخدام البلوتوث والموقع";
       case BleStatus.poweredOff:
-        return "Bluetooth is powered off on your device turn it on";
+        return "البلوتوث مغلق. أعد تشغيله";
       case BleStatus.locationServicesDisabled:
-        return "Enable location services";
+        return "فعل خدمات تحديد الموقع";
       case BleStatus.ready:
-        return "Bluetooth is up and running";
+        return "البلوتوث قيد التشغيل";
       default:
-        return "Waiting to fetch Bluetooth status $status";
+        return "في انتظار جلب حالة البلوتوث.";
     }
   }
   @override

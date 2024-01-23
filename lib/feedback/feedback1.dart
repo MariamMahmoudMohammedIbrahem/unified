@@ -24,21 +24,21 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.brown.shade800,
         leading: IconButton(
             onPressed: () {
               Navigator.pop(context,true);
             },
-            icon: Icon(
+            icon: const Icon(
               Icons.arrow_back,
-              color: Colors.brown.shade700,
+              color: Colors.white,
             )),
         title: Text(
           TKeys.complain.translate(context),
-          style: TextStyle(
-              color: Colors.brown.shade700,
+          style: const TextStyle(
+              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 20),
         ),
@@ -205,7 +205,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                           if(selectedOption.isNotEmpty){
                             await FirebaseFirestore.instance
                                 .collection('users')
-                                .doc(widget.name)
+                                .doc('${widget.name}')
                                 .collection('feedback').doc('$setDay-$setMonth-$setYear-$formattedTime')
                                 .set({
                               'problem': selectedOption,
@@ -225,7 +225,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                               builder: (BuildContext context) {
                                 return AlertDialog(
                                   title: Text(TKeys.error.translate(context)),
-                                  content: Text('Please specify your problem.'),
+                                  content: Text(TKeys.submitError.translate(context)),
                                   actions: [
                                     ElevatedButton(
                                       onPressed: () {

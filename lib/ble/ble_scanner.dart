@@ -42,7 +42,7 @@ class BleScanner implements ReactiveState<BleScannerState> {
             _pushState();
           }
         }, onError: (Object e) => _logMessage('Device scan fails with error: $e'));
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 5), () {
       stopScan();
     });
     _pushState();

@@ -24,6 +24,7 @@
   "mosque": "Mosque",
   "selectMosque": "Select A Mosque",
   "register": "Register",
+  "proceed": "Continue",
   "problemOccurred": "There is a problem that happened, Please Try Again.",
   "resetPassword": "Reset Password",
   "linkSent": "Password reset link sent! check your email",
@@ -48,6 +49,7 @@
   "settings": "Settings",
   "logout": "LogOut",
   "dateTime": "Unit Date And Time: ",
+  "city": "City: ",
   "prayTimes": "Pray Times: ",
   "fajr": "Fajr",
   "duhr": "Duhr",
@@ -76,6 +78,8 @@
   "note": "Leave a note (if you want)",
   "submit": "Submit",
   "hello": "Hello,",
+  "Please specify your problem.": "الرجاء تحديد مشكلتك.",
   "editProfile": "Edit Profile",
-  "update": "Update"
+  "update": "Update",
+  "updateError": "You didn't update anything. Are You Sure you want to update your info?"
 }
