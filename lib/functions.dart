@@ -9,6 +9,7 @@ import 'package:location/location.dart';
 
 import 'package:intl/intl.dart';
 import 'package:ntp/ntp.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants.dart';
 
@@ -50,16 +51,12 @@ List<int> splitIntToChunks(String value) {
 void composeBlePacket(int command, List<int> data, String dataType){
   // setDate=[];
   // List<int> data = [setYear,setMonth,setDay,setHour,setMinute,setSecond];
-  setLocation = [];
   int startFrame = 0xAA;
   int endFrame = 0xAA;
   // final hexValues = data.map((value) => int.parse(value.toRadixString(16), radix: 16)).toList();//convert
-  final hexValues = data.map((value) => value.toRadixString(16)).toList();//convert
-  print('object=> $hexValues');
-  var splitValues = splitIntToChunks('0${hexValues[0]}');
-  splitValues.addAll(splitIntToChunks('0${hexValues[1]}'));
-  print('object=> $splitValues');
-  // switch(dataType){
+  // print('object=> $hexValues');
+  // print('object=> $splitValues');
+  switch(dataType){
     // case 'date':
     //   setDate.add(startFrame);
     //   setDate.add(command);
@@ -69,7 +66,11 @@ void composeBlePacket(int command, List<int> data, String dataType){
     //   setDate.add(value);
     //   setDate.add(endFrame);
     //   break;
-    // case 'location':
+    case 'location':
+      setLocation = [];
+      final hexValues = data.map((value) => value.toRadixString(16)).toList();//convert
+      var splitValues = splitIntToChunks('0${hexValues[0]}');
+      splitValues.addAll(splitIntToChunks('0${hexValues[1]}'));
       setLocation.add(startFrame);
       setLocation.add(command);
       setLocation.add(splitValues.length);
@@ -78,8 +79,18 @@ void composeBlePacket(int command, List<int> data, String dataType){
       setLocation.add(value);
       setLocation.add(endFrame);
       print('setLocation => $setLocation');
-      // break;
-  // }
+      break;
+    case 'zone':
+      setZone = [];
+      setZone.add(startFrame);
+      setZone.add(command);
+      setZone.add(data.length);
+      setZone.addAll(data);
+      int value = calculateChecksum(setZone,1, setZone.length-1);
+      setZone.add(value);
+      setZone.add(endFrame);
+      break;
+  }
 
 }
 int calculateChecksum(List<int> packet, int start, int end) {
@@ -150,7 +161,7 @@ void getLongitude() async {
     //   for(String id in citiesIDs){
     //     if(id.endsWith(area)) {
     print('here');
-          DocumentSnapshot userSnapshot = await firestore.collection('Cities').doc(area).get();
+          DocumentSnapshot userSnapshot = await firestore.collection('Cities').doc(storedArea).get();
     print('here => $userSnapshot');
           if (userSnapshot.exists) {
             Map<String, dynamic>? cityData = userSnapshot.data() as Map<String, dynamic>?;
@@ -161,6 +172,8 @@ void getLongitude() async {
               storedLatitude = cityData['latitude'];
               // combineStringsToList(storedLatitude, storedLongitude);
               composeBlePacket(0x07, [int.parse(storedLatitude), int.parse(storedLongitude)], 'location');
+              storedLongitude = '${storedLongitude.substring(0, 2)}.${storedLongitude.substring(2)}';
+              storedLatitude = '${storedLatitude.substring(0, 2)}.${storedLatitude.substring(2)}';
             }
           }
         // }
@@ -208,7 +221,7 @@ Future<void> getUserFields(String userId) async {
     if (userSnapshot.exists) {
       Map<String, dynamic>? userData = userSnapshot.data() as Map<String, dynamic>?;
       if (userData != null && userData.isNotEmpty) {
-        area = id;
+        storedArea = id;
         mosque = userData['mosque'];
       }
     }
@@ -246,11 +259,11 @@ Future<void> saveSettingData(int dataType, String userName) async{
             'latitude of mobile':storedLatitude,
             'longitude of unit':unitLongitude,
             'latitude of unit':unitLatitude,
-          'city': area,
+          'city': storedArea,
           });
       //delete the doc and set another one in users
       final QuerySnapshot subcollectionSnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').get();
-      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(subcollectionSnapshot.docs.first.id).delete().then((value) async => await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(area).set(
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(subcollectionSnapshot.docs.first.id).delete().then((value) async => await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(storedArea).set(
   {
   'mosque': mosque,
   'date': '$setDay/$setMonth/$setYear',
@@ -308,7 +321,7 @@ Future<void> skipData(String userId)async{
   if(querySnapshot.docs.isNotEmpty){
     for(String id in usersIDs){
       if(id.endsWith(userId)) {
-        DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).collection('Cities').doc(area).get();
+        DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).collection('Cities').doc(storedArea).get();
         if (userSnapshot.exists) {
           Map<String, dynamic>? userData = userSnapshot.data() as Map<String, dynamic>?;
           if (userData != null && userData.isNotEmpty) {
@@ -326,7 +339,7 @@ Future<void> skipData(String userId)async{
   }
 }
 void showToastMessage() {
-  if (showToast) {
+  // if (showToast) {
     Fluttertoast.showToast(
       msg: 'loading the data!',
       toastLength: Toast.LENGTH_SHORT,
@@ -334,5 +347,33 @@ void showToastMessage() {
       backgroundColor: Colors.brown.shade700,
       textColor: Colors.white,
     );
+  // }
+}
+/*// Storing credentials
+Future<void> storeCredentials(String email, String password) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  prefs.setString('email', email);
+  prefs.setString('password', password);
+}
+
+// Retrieving credentials
+Future<Map<String, String>> getStoredCredentials() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? email = prefs.getString('email');
+  String? password = prefs.getString('password');
+  return {'email': email ?? '', 'password': password ?? ''};
+}*/
+//getting the name of the city based on longitude and latitude
+Future<String> getCityName() async{
+  final querySnapshot = await FirebaseFirestore.instance.collection('Cities').where('longitude', isEqualTo: '$unitLongitude').where('latitude', isEqualTo: '$unitLatitude').get();
+  if(querySnapshot.docs.isNotEmpty){
+    unitArea = querySnapshot.docs.first.id;
   }
+  final fieldSnapshot = await FirebaseFirestore.instance.collection('Zone').doc('Egypt').get();
+  if(fieldSnapshot.exists){
+    storedZone = fieldSnapshot['zone'];
+  }
+  composeBlePacket(0x04, [int.parse(storedZone)], 'zone');
+
+  return unitArea;
 }

@@ -3,12 +3,17 @@ import 'package:flutter/cupertino.dart';
 import 'localization_service.dart';
 
 enum TKeys{
+  //authorize
+  access,
+  authorize,
   //login
   email,
   password,
   emailError,
   forgetPassword,
   login,
+  logging,
+  rememberPass,
   noAccount,
   error,
   loginError,
@@ -68,6 +73,9 @@ enum TKeys{
   settingOptions,
   settingPrayerTimes,
   restart,
+  lostConnection,
+  restarting,
+  restartError,
   //settings
   longitudeLatitude,
   unitData,
@@ -81,6 +89,9 @@ enum TKeys{
   testMode,
   soundOptions,
   selectSound,
+  updating,
+  locationError,
+  minute,
   //feedback
   help,
   azaanTime,

@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:ui';
 
-import 'package:azan/ble/ble_status_monitor.dart';
 import 'package:azan/ble/settings.dart';
 import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:functional_data/functional_data.dart';
 import 'package:provider/provider.dart';
 
@@ -245,9 +242,11 @@ class _ConnectingState extends State<Connecting> {
             setState(() {
               print('3$event');
               if (event.length == 13) {
-                unitLatitude = convertToInt(event, 3, 4)/1000000;
-                // unitLongitude = int.parse('${event[7].toString().padLeft(2, '0')}${event[8].toString().padLeft(2, '0')}${event[9].toString().padLeft(2, '0')}${event[10].toString().padLeft(2, '0')}');
-                unitLongitude = convertToInt(event, 7, 4)/1000000;
+                unitLatitude = convertToInt(event, 3, 4);
+                unitLongitude = convertToInt(event, 7, 4);
+                getCityName();
+                unitLatitude = unitLatitude/1000000;
+                unitLongitude = unitLongitude/1000000;
                 list3 = true;
                 awaitingResponse = false;
               }
@@ -270,7 +269,7 @@ class _ConnectingState extends State<Connecting> {
                 zoneAfter = convertToInt(event, 3, 1);
                 list4 = true;
                 awaitingResponse = false;
-                showToast = false;
+                // showToast = false;
               }
             });
           });
@@ -284,7 +283,7 @@ class _ConnectingState extends State<Connecting> {
           .collection('users')
           .doc(widget.userName)
           .collection('Cities')
-          .doc(area)
+          .doc(storedArea)
           .update({
         'fajr': '$fajrHour:$fajrMinute',
         'duhr': '$duhrHour:$duhrMinute',
@@ -302,8 +301,7 @@ class _ConnectingState extends State<Connecting> {
     }
   }
   void getAllDataAndSubscribe() async {
-    showToast = true;
-    showToastMessage();
+    // showToast = true;
     List<Map<int, List<int>>> dataSets = [
       {1: getDate},
       {2: getPray},
@@ -351,12 +349,36 @@ class _ConnectingState extends State<Connecting> {
     setState(() {
       if (widget.viewModel.connectionStatus ==
           DeviceConnectionState.disconnected) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ScanningListScreen(
-              userName: widget.userName,
-            ),
+        hourTimer?.cancel();
+        periodicTimer?.cancel();
+        deviceName = '';
+        found = false;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.brown.shade50,
+            title: Text(TKeys.error.translate(context)),
+            content: Text(TKeys.lostConnection.translate(context)),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ScanningListScreen(
+                        userName: widget.userName,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.brown,
+                    backgroundColor: Colors.brown.shade600,
+                    disabledForegroundColor: Colors.brown.shade600,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
+              ),
+            ],
           ),
         );
       }
@@ -418,7 +440,7 @@ class _ConnectingState extends State<Connecting> {
           children: [
             CircularProgressIndicator(color: Colors.brown.shade700,),
             const SizedBox(height: 16.0),
-            Text('Restarting...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+            Text(TKeys.restarting.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
           ],
         ),
       ),
@@ -474,7 +496,7 @@ class _ConnectingState extends State<Connecting> {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.brown.shade50,
           title: Text(TKeys.error.translate(context)),
-          content: Text('Failed to update. Please Try Again :('),
+          content: Text(TKeys.restartError.translate(context)),
           actions: [
             ElevatedButton(
               onPressed: () {
@@ -485,7 +507,7 @@ class _ConnectingState extends State<Connecting> {
                   backgroundColor: Colors.brown.shade600,
                   disabledForegroundColor: Colors.brown.shade600,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
             ),
           ],
         ),
@@ -521,6 +543,7 @@ class _ConnectingState extends State<Connecting> {
       list4 = false;
     });
     //connect and get data
+    showToastMessage();
     periodicTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
       if (!widget.viewModel.deviceConnected) {
         widget.viewModel.connect();
@@ -945,6 +968,7 @@ class _ConnectingState extends State<Connecting> {
                                 list3 = false;
                                 list4 = false;
                               });
+                              showToastMessage();
                               Future.delayed(const Duration(seconds: 1));
                               periodicTimer = Timer.periodic(
                                   const Duration(seconds: 1), (Timer t) {
@@ -1054,7 +1078,7 @@ class _ConnectingState extends State<Connecting> {
                     Padding(
                       padding: EdgeInsets.symmetric(
                           horizontal: width * .07, vertical: 10),
-                      child: Text(area,
+                      child: Text(unitArea,
                         style: TextStyle(
                             color: Colors.brown.shade800, fontSize: 25, fontWeight: FontWeight.bold),),
                     ),
@@ -1666,7 +1690,7 @@ class _NotConnectedState extends State<NotConnected> {
                   Padding(
                     padding: EdgeInsets.symmetric(
                         horizontal: width * .07, vertical: 10),
-                    child: Text(area,
+                    child: Text(storedArea,
                       style: TextStyle(
                           color: Colors.brown.shade800, fontSize: 25, fontWeight: FontWeight.bold),),
                   ),

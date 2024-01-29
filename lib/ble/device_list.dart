@@ -98,13 +98,15 @@ class _ScanningState extends State<Scanning> {
     else{
       _showBleNotReadyAlertDialog(context);
     }
-
-  Future.delayed(const Duration(seconds: 2), () {
-    if (found) {
-      widget.stopScan();
-      connect();
+    if(_ble.status == BleStatus.ready){
+      Future.delayed(const Duration(seconds: 2), () {
+        if (found) {
+          widget.stopScan();
+          connect();
+        }
+      });
     }
-  });
+
 }
 
   void _showBleNotReadyAlertDialog(BuildContext context) {
@@ -159,13 +161,15 @@ class _ScanningState extends State<Scanning> {
   }
 
   void initState() {
-    getCurrentDateTime();
-    setState(() {
-      _startScanning();
-      getDocumentIDs();
-      getUserFields(widget.userName);
-    });
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      getCurrentDateTime();
+      setState(() {
+        _startScanning();
+        getDocumentIDs();
+        getUserFields(widget.userName);
+      });
+    });
   }
 
   void dispose() {

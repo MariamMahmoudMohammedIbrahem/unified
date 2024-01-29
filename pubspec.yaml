@@ -53,6 +53,8 @@ dependencies:
   get: ^4.6.6
   email_validator: ^2.1.17
   permission_handler: ^11.0.1
+  shared_preferences: ^2.2.2
+  riverpod: ^2.4.9
 
 dev_dependencies:
   flutter_test:

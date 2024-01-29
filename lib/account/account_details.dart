@@ -209,7 +209,7 @@ class _AccountDetailsState extends State<AccountDetails> {
                         child: TextFormField(
                           enabled: false,
                           decoration: InputDecoration(
-                            label: Text(area,style: const TextStyle(color: Colors.white,fontSize: 20, fontWeight: FontWeight.bold),),
+                            label: Text(storedArea,style: const TextStyle(color: Colors.white,fontSize: 20, fontWeight: FontWeight.bold),),
                             floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
                               final Color color = states.contains(MaterialState.error)
                                   ? Theme.of(context).colorScheme.error

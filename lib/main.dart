@@ -1,4 +1,5 @@
 import 'package:azan/register/login.dart';
+import 'package:azan/t_key.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -156,16 +157,16 @@ class _LocationPermissionState extends State<LocationPermission> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Location Permission Required'),
+            title: const Text('Location Permission Required'),
             content:
-                Text('Please grant location permission to use this feature.'),
+                const Text('Please grant location permission to use this feature.'),
             actions: [
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
                   openAppSettings(); // Opens the app settings page
                 },
-                child: Text('Open Settings'),
+                child: const Text('Open Settings'),
               ),
             ],
           );
@@ -173,15 +174,27 @@ class _LocationPermissionState extends State<LocationPermission> {
       );
     }
   }
-
+  @override
+  void initState(){
+    super.initState();
+    // Preload images
+    precacheImage(const AssetImage('images/pattern.jpg'), context);
+    precacheImage(const AssetImage('images/appIcon.jpg'), context);
+  }
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const BleStatusScreen(status: BleStatus.unauthorized,),
+            SizedBox(
+            width: .8*width,
+            child: Image.asset('images/authorize.jpg'),
+            ),
+            Text(TKeys.authorize.translate(context)),
             ElevatedButton(
               onPressed: _requestLocationPermission,
               style: ElevatedButton.styleFrom(
@@ -189,7 +202,7 @@ class _LocationPermissionState extends State<LocationPermission> {
                   backgroundColor: Colors.brown.shade600,
                   disabledForegroundColor: Colors.brown.shade600,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: const Text('Give The Access',style: TextStyle(color: Colors.white,fontSize: 18),),
+              child: Text(TKeys.access.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
             ),
           ],
         ),

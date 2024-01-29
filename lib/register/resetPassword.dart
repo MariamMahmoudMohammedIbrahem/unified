@@ -15,7 +15,18 @@ class _ResetPasswordState extends State<ResetPassword> {
 
   late String _email;
   final _auth = FirebaseAuth.instance;
+  void sendVerificationEmail() async {
+    User? user = FirebaseAuth.instance.currentUser;
 
+    try {
+      await user?.sendEmailVerification();
+      // Verification email sent successfully
+      print("Verification email sent!");
+    } catch (e) {
+      // Handle errors
+      print("Error sending verification email: $e");
+    }
+  }
   Future passwordReset() async {
     try{
       await _auth.sendPasswordResetEmail(email: _email);

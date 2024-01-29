@@ -36,7 +36,7 @@ class _AccountEditState extends State<AccountEdit> {
     updatedSheikhName=sheikhName;
     updatedSheikhNumber=sheikhPhone;
     updatedUserEmail =email;
-    updatedArea = area;
+    updatedArea = storedArea;
     updatedMosque = mosque;
     userNameController =
         TextEditingController(text: widget.name);
@@ -51,7 +51,12 @@ class _AccountEditState extends State<AccountEdit> {
     // areaController =
     //     TextEditingController(text: area);
     // getDocumentIDs();
-    getMosquesList(area);
+    getMosquesList(storedArea);
+  }
+  @override
+  void dispose(){
+    userConfirm = false;
+    super.dispose();
   }
 
   @override
@@ -65,6 +70,7 @@ class _AccountEditState extends State<AccountEdit> {
         leading: IconButton(
           onPressed: () {
             Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: userName,)));
+            userConfirm = false;
           },
           icon: Icon(
             Icons.arrow_back,
@@ -549,7 +555,7 @@ class _AccountEditState extends State<AccountEdit> {
                               child: ElevatedButton.icon(
                                 onPressed: () async {
                                   //show alert dialog if no data is updated
-                                  if(widget.name != userName || updatedSheikhName != sheikhName || updatedSheikhNumber != sheikhPhone || updatedUserEmail != email || updatedArea != area || updatedMosque != mosque){
+                                  if(widget.name != userName || updatedSheikhName != sheikhName || updatedSheikhNumber != sheikhPhone || updatedUserEmail != email || updatedArea != storedArea || updatedMosque != mosque){
                                     //something is updated
                                     //update the data in firebase
                                     if (widget.name != null) {
@@ -614,7 +620,7 @@ class _AccountEditState extends State<AccountEdit> {
                                           });
                                         }
                                         // update cities and mosques in Cities collection
-                                        if(updatedArea != area && updatedArea.isNotEmpty){
+                                        if(updatedArea != storedArea && updatedArea.isNotEmpty){
                                           //check if the city is in the database
                                           if(citiesIDs.contains(updatedArea)){
                                             //if mosque is in city
@@ -685,16 +691,16 @@ class _AccountEditState extends State<AccountEdit> {
                                             });
                                           }
                                           //update cities and mosques in users
-                                          if(area != updatedArea && updatedArea.isNotEmpty){
+                                          if(storedArea != updatedArea && updatedArea.isNotEmpty){
                                             if(mosque != updatedMosque && updatedMosque.isNotEmpty){
-                                              FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(area).delete().then((value) => FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(updatedArea).set(
+                                              FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(storedArea).delete().then((value) => FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(updatedArea).set(
                                                   {'mosque':updatedMosque,})).catchError((error) {
                                                 // Handle errors in the deletion operation
                                                 print('Error deleting document: $error');
                                               });
                                             }
                                             else{
-                                              DocumentSnapshot currentDocSnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(area).get();
+                                              DocumentSnapshot currentDocSnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(storedArea).get();
                                               // Check if the current document exists
                                               if (currentDocSnapshot.exists) {
                                                 // Get the data from the current document
@@ -704,7 +710,7 @@ class _AccountEditState extends State<AccountEdit> {
                                                 await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(updatedArea).set(data);
 
                                                 // Optionally, delete the old document
-                                                await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(area).delete();
+                                                await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(storedArea).delete();
 
                                               }
                                             }

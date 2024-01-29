@@ -1,7 +1,5 @@
-import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:azan/functions.dart';
 import 'package:azan/register/resetPassword.dart';
 import 'package:azan/register/signup.dart';
 import 'package:azan/t_key.dart';
@@ -9,11 +7,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+import 'package:provider/provider.dart';
 
 import '../ble/device_list.dart';
 import '../constants.dart';
+import '../functions.dart';
 import '../localization_service.dart';
+
+final authProvider = StreamProvider<User?>(create: (ref) {
+  return FirebaseAuth.instance.authStateChanges();
+}, initialData: null,);
+
+
 
 class LogIn extends StatefulWidget {
   const LogIn({super.key});
@@ -27,6 +32,28 @@ class _LogInState extends State<LogIn> {
   final passwordController = TextEditingController();
   late String emailUser;
   late String password;
+  /*Future<void> autoLogin() async {
+    Map<String, String> storedCredentials = await getStoredCredentials();
+    String email = storedCredentials['email'] ?? '';
+    String password = storedCredentials['password'] ?? '';
+
+    if (email.isNotEmpty && password.isNotEmpty) {
+      await _loginUser(context);
+    }
+  }
+  Future<void> autoFillCredentials() async {
+    Map<String, String> storedCredentials = await getStoredCredentials();
+    String email = storedCredentials['email'] ?? '';
+    String password = storedCredentials['password'] ?? '';
+
+    setState(() {
+      emailUserController.text = email;
+      if (rememberPassword) {
+        passwordController.text = password;
+      }
+    });
+  }*/
+
   Future<void> _loginUser(BuildContext context) async {
     // Show loading dialog
     showDialog(
@@ -39,7 +66,7 @@ class _LogInState extends State<LogIn> {
           children: [
             CircularProgressIndicator(color: Colors.brown.shade700,),
             const SizedBox(height: 16.0),
-            Text('Logging in...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+            Text(TKeys.logging.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
           ],
         ),
       ),
@@ -50,6 +77,9 @@ class _LogInState extends State<LogIn> {
         email: emailUser,
         password: password,
       );
+      /*if (rememberPassword) {
+        await storeCredentials(email, password);
+      }*/
 
       if (userCredential != null) {
         final userSnapshot = await FirebaseFirestore.instance
@@ -128,6 +158,13 @@ class _LogInState extends State<LogIn> {
   }
   final localizationController = Get.find<LocalizationController>();
   @override
+  void initState() {
+    super.initState();
+    /*WidgetsBinding.instance.addPostFrameCallback((_) {
+      autoFillCredentials(); // Check for stored credentials
+    });*/
+  }
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -145,100 +182,50 @@ class _LogInState extends State<LogIn> {
               ),
             ),
           ),
-          Positioned.fill(
+          Center(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: width * 0.07),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20.0),
-                    child: CircleAvatar(
-                        backgroundColor: Colors.brown.shade200,
-                        radius: 120,
-                        child: const CircleAvatar(
-                          backgroundColor: Colors.brown,
-                          radius: 112,
-                          child: CircleAvatar(
-                            backgroundImage: AssetImage(
-                              'images/appIcon.jpg',
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20.0),
+                      child: CircleAvatar(
+                          backgroundColor: Colors.brown.shade200,
+                          radius: 120,
+                          child: const CircleAvatar(
+                            backgroundColor: Colors.brown,
+                            radius: 112,
+                            child: CircleAvatar(
+                              backgroundColor: Colors.transparent,
+                              backgroundImage: AssetImage(
+                                'images/appIcon.jpg',
+                              ),
+                              radius: 100,
                             ),
-                            radius: 100,
-                          ),
-                        )),
-                  ),
-                  TextFormField(
-                    controller: emailUserController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.people, color: Colors.brown.shade700,),
-                      labelText: TKeys.email.translate(context),
-                      floatingLabelStyle: MaterialStateTextStyle.resolveWith(
-                          (Set<MaterialState> states) {
-                            final Color color = states.contains(MaterialState.error)
-                                ? Theme.of(context).colorScheme.error
-                                : Colors.brown.shade700;
-                        return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
-                      }),
-                      labelStyle: MaterialStateTextStyle.resolveWith(
-                          (Set<MaterialState> states) {
-                        final Color color = states.contains(MaterialState.error)
-                            ? Theme.of(context).colorScheme.error
-                            : Colors.brown.shade700;
-                        return TextStyle(color: color, letterSpacing: 1.3);
-                      }),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                        borderSide: BorderSide(width: 3, color: Colors.brown.shade800 ,),
-                      ),
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                        borderSide: BorderSide(width: 1, color: Colors.brown ,),
-                      ),
+                          )),
                     ),
-                    onChanged: (value) {
-                      emailUser = value;
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10.0),
-                    child: TextFormField(
-                      controller: passwordController,
-                      keyboardType: TextInputType.text,
-                      obscureText: showPassword,
+                    TextFormField(
+                      controller: emailUserController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.lock, color: Colors.brown.shade700,),
-                        suffixIcon: IconButton(
-                          icon: Icon(showPassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,color: Colors.brown.shade700,),
-                          onPressed: () {
-                            if (showPassword == true) {
-                              setState(() {
-                                showPassword = false;
-                              });
-                            } else {
-                              setState(() {
-                                showPassword = true;
-                              });
-                            }
-                          },
-                        ),
-                        labelText: TKeys.password.translate(context),
+                        prefixIcon: Icon(Icons.people, color: Colors.brown.shade700,),
+                        labelText: TKeys.email.translate(context),
                         floatingLabelStyle: MaterialStateTextStyle.resolveWith(
-                                (Set<MaterialState> states) {
+                            (Set<MaterialState> states) {
                               final Color color = states.contains(MaterialState.error)
                                   ? Theme.of(context).colorScheme.error
                                   : Colors.brown.shade700;
-                              return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
-                            }),
+                          return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
+                        }),
                         labelStyle: MaterialStateTextStyle.resolveWith(
-                                (Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade700;
-                              return TextStyle(color: color, letterSpacing: 1.3, fontSize: 20);
-                            }),
+                            (Set<MaterialState> states) {
+                          final Color color = states.contains(MaterialState.error)
+                              ? Theme.of(context).colorScheme.error
+                              : Colors.brown.shade700;
+                          return TextStyle(color: color, letterSpacing: 1.3);
+                        }),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(20.0)),
                           borderSide: BorderSide(width: 3, color: Colors.brown.shade800 ,),
@@ -249,94 +236,157 @@ class _LogInState extends State<LogIn> {
                         ),
                       ),
                       onChanged: (value) {
-                        password = value;
+                        emailUser = value;
                       },
                     ),
-                  ),
-                  Visibility(
-                    visible: notFound,
-                    child: Text(TKeys.emailError.translate(context)),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: TextFormField(
+                        controller: passwordController,
+                        keyboardType: TextInputType.text,
+                        obscureText: showPassword,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.lock, color: Colors.brown.shade700,),
+                          suffixIcon: IconButton(
+                            icon: Icon(showPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,color: Colors.brown.shade700,),
+                            onPressed: () {
+                              if (showPassword == true) {
+                                setState(() {
+                                  showPassword = false;
+                                });
+                              } else {
+                                setState(() {
+                                  showPassword = true;
+                                });
+                              }
+                            },
+                          ),
+                          labelText: TKeys.password.translate(context),
+                          floatingLabelStyle: MaterialStateTextStyle.resolveWith(
+                                  (Set<MaterialState> states) {
+                                final Color color = states.contains(MaterialState.error)
+                                    ? Theme.of(context).colorScheme.error
+                                    : Colors.brown.shade700;
+                                return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
+                              }),
+                          labelStyle: MaterialStateTextStyle.resolveWith(
+                                  (Set<MaterialState> states) {
+                                final Color color = states.contains(MaterialState.error)
+                                    ? Theme.of(context).colorScheme.error
+                                    : Colors.brown.shade700;
+                                return TextStyle(color: color, letterSpacing: 1.3, fontSize: 20);
+                              }),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                            borderSide: BorderSide(width: 3, color: Colors.brown.shade800 ,),
+                          ),
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                            borderSide: BorderSide(width: 1, color: Colors.brown ,),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          password = value;
+                        },
+                      ),
+                    ),
+                    Visibility(
+                      visible: notFound,
+                      child: Text(TKeys.emailError.translate(context)),
+                    ),
+                    CheckboxListTile(
+                      title: Text(TKeys.rememberPass.translate(context), style: TextStyle(color: Colors.brown.shade700,fontWeight: FontWeight.bold),),
+                      value: rememberPassword,
+                      onChanged: (value) {
+                        setState(() {
+                          rememberPassword = value!;
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const ResetPassword()));
+                        },
+                        child: Text(
+                          TKeys.forgetPassword.translate(context),
+                          style: TextStyle(color: Colors.red.shade700, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: width*.8,
+                      child: ElevatedButton(
+                        // onPressed: () async {
+                        //   try {
+                        //     final userCredential = await FirebaseAuth.instance
+                        //         .signInWithEmailAndPassword(
+                        //             email: emailUser, password: password);
+                        //     // print('email1 $emailUser');
+                        //     if (userCredential != null) {
+                        //       setState(() {
+                        //         notFound = false;
+                        //       });
+                        //       final userSnapshot = await FirebaseFirestore.instance
+                        //           .collection('users')
+                        //           .where('user email', isEqualTo: emailUser)
+                        //           .get();
+                        //       if (userSnapshot.docs.isNotEmpty) {
+                        //         final username = userSnapshot.docs.first.id;
+                        //         // print('Username: $username');
+                        //         Navigator.pushAndRemoveUntil(
+                        //             context,
+                        //             MaterialPageRoute(
+                        //                 builder: (context) => ScanningListScreen(
+                        //                       userName: username,
+                        //                     )),
+                        //               (route) => false,);
+                        //       } else {
+                        //         setState(() {
+                        //           notFound = true;
+                        //         });
+                        //       }
+                        //     }
+                        //   } on FirebaseAuthException catch (e) {
+                        //     // Handle FirebaseAuthException
+                        //     print(
+                        //         'Firebase Auth Error: ${e.code}'); // Print the error code
+                        //     print('Firebase Auth Error Message: ${e.message}');
+                        //   } catch (e) {
+                        //     // Handle other exceptions
+                        //     print('Other Error: $e');
+                        //   }
+                        // },
+                        onPressed: () => _loginUser(context),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.brown,
+                          backgroundColor: Colors.brown.shade600,
+                          disabledForegroundColor: Colors.brown.shade600,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
+                        child: Text(TKeys.login.translate(context), style: TextStyle(color: Colors.white, fontSize: 24,),),
+                      ),
+                    ),
+                    TextButton(
                       onPressed: () {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const ResetPassword()));
+                                builder: (context) => const SignUp()));
                       },
                       child: Text(
-                        TKeys.forgetPassword.translate(context),
+                        TKeys.noAccount.translate(context),
                         style: TextStyle(color: Colors.red.shade700, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ),
-                  SizedBox(
-                    width: width*.8,
-                    child: ElevatedButton(
-                      // onPressed: () async {
-                      //   try {
-                      //     final userCredential = await FirebaseAuth.instance
-                      //         .signInWithEmailAndPassword(
-                      //             email: emailUser, password: password);
-                      //     // print('email1 $emailUser');
-                      //     if (userCredential != null) {
-                      //       setState(() {
-                      //         notFound = false;
-                      //       });
-                      //       final userSnapshot = await FirebaseFirestore.instance
-                      //           .collection('users')
-                      //           .where('user email', isEqualTo: emailUser)
-                      //           .get();
-                      //       if (userSnapshot.docs.isNotEmpty) {
-                      //         final username = userSnapshot.docs.first.id;
-                      //         // print('Username: $username');
-                      //         Navigator.pushAndRemoveUntil(
-                      //             context,
-                      //             MaterialPageRoute(
-                      //                 builder: (context) => ScanningListScreen(
-                      //                       userName: username,
-                      //                     )),
-                      //               (route) => false,);
-                      //       } else {
-                      //         setState(() {
-                      //           notFound = true;
-                      //         });
-                      //       }
-                      //     }
-                      //   } on FirebaseAuthException catch (e) {
-                      //     // Handle FirebaseAuthException
-                      //     print(
-                      //         'Firebase Auth Error: ${e.code}'); // Print the error code
-                      //     print('Firebase Auth Error Message: ${e.message}');
-                      //   } catch (e) {
-                      //     // Handle other exceptions
-                      //     print('Other Error: $e');
-                      //   }
-                      // },
-                      onPressed: () => _loginUser(context),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.brown,
-                        backgroundColor: Colors.brown.shade600,
-                        disabledForegroundColor: Colors.brown.shade600,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
-                      child: Text(TKeys.login.translate(context), style: TextStyle(color: Colors.white, fontSize: 24,),),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const SignUp()));
-                    },
-                    child: Text(
-                      TKeys.noAccount.translate(context),
-                      style: TextStyle(color: Colors.red.shade700, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

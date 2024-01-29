@@ -231,9 +231,11 @@ class _SettingState extends State<Setting> {
             setState(() {
               print('3$event');
               if (event.length == 13) {
-                // locationList = List.from(event);
-                unitLatitude = convertToInt(event, 3, 4)/1000000;
-                unitLongitude = convertToInt(event, 7, 4)/1000000;
+                unitLatitude = convertToInt(event, 3, 4);
+                unitLongitude = convertToInt(event, 7, 4);
+                getCityName();
+                unitLatitude = unitLatitude/1000000;
+                unitLongitude = unitLongitude/1000000;
                 list3 = true;
                 awaitingResponse = false;
               }
@@ -256,7 +258,7 @@ class _SettingState extends State<Setting> {
                 zoneAfter = convertToInt(event, 3, 1);
                 list4 = true;
                 awaitingResponse = false;
-                showToast = false;
+                // showToast = false;
               }
             });
           });
@@ -265,8 +267,6 @@ class _SettingState extends State<Setting> {
     }
   }
   void getAllDataAndSubscribe() async {
-    showToast = true;
-    showToastMessage();
     List<Map<int, List<int>>> dataSets = [
       {1: getDate},
       {2: getPray},
@@ -337,7 +337,7 @@ class _SettingState extends State<Setting> {
           children: [
             CircularProgressIndicator(color: Colors.brown.shade700,),
             const SizedBox(height: 16.0),
-            Text('Updating...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+            Text(TKeys.updating.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
           ],
         ),
       ),
@@ -364,7 +364,7 @@ class _SettingState extends State<Setting> {
             builder: (context) => AlertDialog(
               backgroundColor: Colors.brown.shade50,
               title: Text(TKeys.error.translate(context)),
-              content: Text('Failed to set date. Please Try Again :('),
+              content: Text(TKeys.locationError.translate(context)),
               actions: [
                 ElevatedButton(
                   onPressed: () {
@@ -389,7 +389,7 @@ class _SettingState extends State<Setting> {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.brown.shade50,
           title: Text(TKeys.error.translate(context)),
-          content: Text('Failed to set date. Please Try Again :('),
+          content: Text(TKeys.locationError.translate(context)),
           actions: [
             ElevatedButton(
               onPressed: () {
@@ -420,7 +420,7 @@ class _SettingState extends State<Setting> {
           children: [
             CircularProgressIndicator(color: Colors.brown.shade700,),
             const SizedBox(height: 16.0),
-            Text('Restarting...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+            Text(TKeys.restarting.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
           ],
         ),
       ),
@@ -459,8 +459,8 @@ class _SettingState extends State<Setting> {
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: Colors.brown.shade50,
-              title: const Text('wait a minute'),
-              content: Text('${widget.viewModel.connectionStatus}'),
+              title: Text(TKeys.minute.translate(context)),
+              content: Text(TKeys.restarting.translate(context)),
               actions: [
                 ElevatedButton(
                   onPressed: () {
@@ -471,7 +471,7 @@ class _SettingState extends State<Setting> {
                       backgroundColor: Colors.brown.shade600,
                       disabledForegroundColor: Colors.brown.shade600,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+                  child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
                 ),
               ],
             ),
@@ -499,7 +499,7 @@ class _SettingState extends State<Setting> {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.brown.shade50,
           title: Text(TKeys.error.translate(context)),
-          content: Text('Failed to update. Please Try Again :('),
+          content: Text(TKeys.locationError.translate(context)),
           actions: [
             ElevatedButton(
               onPressed: () {
@@ -510,7 +510,7 @@ class _SettingState extends State<Setting> {
                   backgroundColor: Colors.brown.shade600,
                   disabledForegroundColor: Colors.brown.shade600,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
             ),
           ],
         ),
@@ -531,7 +531,7 @@ class _SettingState extends State<Setting> {
           children: [
             CircularProgressIndicator(color: Colors.brown.shade700,),
             const SizedBox(height: 16.0),
-            Text('Updating...', style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+            Text(TKeys.updating.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
           ],
         ),
       ),
@@ -552,6 +552,8 @@ class _SettingState extends State<Setting> {
           //add get all data
           awaitingResponse = false;
           saveSettingData(2, widget.userName);
+          // showToast = true;
+          showToastMessage();
           getAllDataAndSubscribe();
           Navigator.pop(context);
         }
@@ -560,8 +562,8 @@ class _SettingState extends State<Setting> {
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: Colors.brown.shade50,
-              title: const Text('Error'),
-              content: Text('Failed to log in. Please Try Again :('),
+              title: Text(TKeys.error.translate(context)),
+              content: Text(TKeys.locationError.translate(context)),
               actions: [
                 ElevatedButton(
                   onPressed: () {
@@ -572,7 +574,7 @@ class _SettingState extends State<Setting> {
                       backgroundColor: Colors.brown.shade600,
                       disabledForegroundColor: Colors.brown.shade600,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+                  child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
                 ),
               ],
             ),
@@ -586,7 +588,7 @@ class _SettingState extends State<Setting> {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.brown.shade50,
           title: Text(TKeys.error.translate(context)),
-          content: Text('Failed to update. Please Try Again :('),
+          content: Text(TKeys.locationError.translate(context)),
           actions: [
             ElevatedButton(
               onPressed: () {
@@ -597,7 +599,7 @@ class _SettingState extends State<Setting> {
                   backgroundColor: Colors.brown.shade600,
                   disabledForegroundColor: Colors.brown.shade600,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: const Text('OK',style: TextStyle(color: Colors.white,fontSize: 18),),
+              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
             ),
           ],
         ),
@@ -618,6 +620,7 @@ class _SettingState extends State<Setting> {
         responseSubscription?.cancel();
         print('ready to get data');
         saveSettingData(3, widget.userName);
+        showToastMessage();
         getAllDataAndSubscribe();
       }
     });
@@ -718,6 +721,8 @@ class _SettingState extends State<Setting> {
                               list3 = false;
                               list4 = false;
                             });
+
+                            showToastMessage();
                             Future.delayed(const Duration(seconds: 1));
                             periodicTimer = Timer.periodic(
                                 const Duration(seconds: 1), (Timer t) {
@@ -932,7 +937,7 @@ class _SettingState extends State<Setting> {
                       child: PopupMenuButton<String>(
                         onSelected: (String value) {
                           setState(() {
-                            area = value;
+                            storedArea = value;
                             getLongitude();
                           });
                         },
@@ -971,7 +976,7 @@ class _SettingState extends State<Setting> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  area == '' ? TKeys.selectArea.translate(context) : area,
+                                  storedArea == '' ? TKeys.selectArea.translate(context) : storedArea,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

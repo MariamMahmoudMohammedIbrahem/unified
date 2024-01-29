@@ -10,8 +10,8 @@ class BleStatusScreen extends StatelessWidget {
     switch (status) {
       case BleStatus.unsupported:
         return "هذا الهاتف لا بدعم البلوتوث";
-      case BleStatus.unauthorized:
-        return "تحتاج إلى السماح بالوصول إلى التطبيق لاستخدام البلوتوث والموقع";
+      // case BleStatus.unauthorized:
+      //   return "تحتاج إلى السماح بالوصول إلى التطبيق لاستخدام البلوتوث والموقع";
       case BleStatus.poweredOff:
         return "البلوتوث مغلق. أعد تشغيله";
       case BleStatus.locationServicesDisabled:
@@ -26,6 +26,7 @@ class BleStatusScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -60,11 +61,6 @@ class _AnimatedImageState extends State<AnimatedImage> with SingleTickerProvider
         return SizedBox(
           width: .8*width,
           child: SlideTransition(position:_animation,child: Image.asset('images/off.jpg')),
-        );
-      case BleStatus.unauthorized:
-        return SizedBox(
-          width: .8*width,
-          child: SlideTransition(position:_animation,child: Image.asset('images/authorize.jpg')),
         );
       case BleStatus.poweredOff:
         return SizedBox(
