@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../ble/device_list.dart';
 import '../constants.dart';
@@ -81,7 +82,12 @@ class _LogInState extends State<LogIn> {
       /*if (rememberPassword) {
         await storeCredentials(email, password);
       }*/
-
+      if (rememberPassword) {
+        // Store email and password securely
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('email', emailUser);
+        await prefs.setString('password', password);
+      }
       if (userCredential != null) {
         final userSnapshot = await FirebaseFirestore.instance
             .collection('users')
@@ -297,16 +303,16 @@ class _LogInState extends State<LogIn> {
                       visible: notFound,
                       child: Text(TKeys.emailError.translate(context)),
                     ),
-                    // CheckboxListTile(
-                    //   title: Text(TKeys.rememberPass.translate(context), style: TextStyle(color: Colors.brown.shade700,fontWeight: FontWeight.bold),),
-                    //   value: rememberPassword,
-                    //   onChanged: (value) {
-                    //     setState(() {
-                    //       rememberPassword = value!;
-                    //     });
-                    //   },
-                    //   controlAffinity: ListTileControlAffinity.leading,
-                    // ),
+                    CheckboxListTile(
+                      title: Text(TKeys.rememberPass.translate(context), style: TextStyle(color: Colors.brown.shade700,fontWeight: FontWeight.bold),),
+                      value: rememberPassword,
+                      onChanged: (value) {
+                        setState(() {
+                          rememberPassword = value!;
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton(
