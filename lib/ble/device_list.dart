@@ -198,7 +198,7 @@ class _ScanningState extends State<Scanning> {
                   backgroundColor: Colors.brown.shade200,
                   disabledForegroundColor: Colors.brown.shade600,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.scanning.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
+              child: Text(TKeys.scan.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
               onPressed: () {
                 Navigator.of(context).pop();
                 _startScanning();

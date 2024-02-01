@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:provider/provider.dart';
 
 import '../ble/device_list.dart';
@@ -296,16 +297,16 @@ class _LogInState extends State<LogIn> {
                       visible: notFound,
                       child: Text(TKeys.emailError.translate(context)),
                     ),
-                    CheckboxListTile(
-                      title: Text(TKeys.rememberPass.translate(context), style: TextStyle(color: Colors.brown.shade700,fontWeight: FontWeight.bold),),
-                      value: rememberPassword,
-                      onChanged: (value) {
-                        setState(() {
-                          rememberPassword = value!;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
+                    // CheckboxListTile(
+                    //   title: Text(TKeys.rememberPass.translate(context), style: TextStyle(color: Colors.brown.shade700,fontWeight: FontWeight.bold),),
+                    //   value: rememberPassword,
+                    //   onChanged: (value) {
+                    //     setState(() {
+                    //       rememberPassword = value!;
+                    //     });
+                    //   },
+                    //   controlAffinity: ListTileControlAffinity.leading,
+                    // ),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton(

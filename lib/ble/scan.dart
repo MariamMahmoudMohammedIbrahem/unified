@@ -362,14 +362,7 @@ class _ConnectingState extends State<Connecting> {
             actions: [
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ScanningListScreen(
-                        userName: widget.userName,
-                      ),
-                    ),
-                  );
+                  Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.brown,
@@ -579,9 +572,10 @@ class _ConnectingState extends State<Connecting> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final _auth = FirebaseAuth.instance;
   signOut() async {
+    widget.viewModel.deviceConnector.disconnect(widget.device.id);
     await _auth.signOut();
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => const LogIn()));
+    Navigator.pushAndRemoveUntil(
+        context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
   }
 
   @override
@@ -793,43 +787,43 @@ class _ConnectingState extends State<Connecting> {
                     color: Colors.brown.shade100,
                   ),
                 ),
-                ListTile(
-                  leading: Icon(
-                    Icons.feedback_outlined,
-                    color: Colors.brown.shade700,
-                    size: 30,
-                  ),
-                  title: Text(
-                    TKeys.complain.translate(context),
-                    style: TextStyle(
-                        color: Colors.brown.shade800,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 25),
-                  ),
-                  onTap: () {
-                    _scaffoldKey.currentState?.closeDrawer();
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => FeedbackRegister(
-                                  name: widget.userName,
-                                )));
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Divider(
-                    height: 1,
-                    indent: 0,
-                    endIndent: 10,
-                    thickness: 2,
-                    color: Colors.brown.shade100,
-                  ),
-                ),
                 Visibility(
                   visible: admin,
                   child: Column(
                     children: [
+                      ListTile(
+                        leading: Icon(
+                          Icons.feedback_outlined,
+                          color: Colors.brown.shade700,
+                          size: 30,
+                        ),
+                        title: Text(
+                          TKeys.complain.translate(context),
+                          style: TextStyle(
+                              color: Colors.brown.shade800,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 25),
+                        ),
+                        onTap: () {
+                          _scaffoldKey.currentState?.closeDrawer();
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => FeedbackRegister(
+                                    name: widget.userName,
+                                  )));
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Divider(
+                          height: 1,
+                          indent: 0,
+                          endIndent: 10,
+                          thickness: 2,
+                          color: Colors.brown.shade100,
+                        ),
+                      ),
                       ListTile(
                         leading: Icon(
                           Icons.settings,
@@ -1327,8 +1321,8 @@ class _NotConnectedState extends State<NotConnected> {
 
   signOut() async {
     await _auth.signOut();
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => const LogIn()));
+    Navigator.pushAndRemoveUntil(
+      context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
   }
 
   void dispose() {
@@ -1488,38 +1482,42 @@ class _NotConnectedState extends State<NotConnected> {
                 color: Colors.brown.shade50,
               ),
             ),
-            ListTile(
-              leading: Icon(
-                Icons.feedback_outlined,
-                color: Colors.brown.shade700,
-                size: 30,
-              ),
-              title: Text(
-                TKeys.complain.translate(context),
-                style: TextStyle(
-                    color: Colors.brown.shade800,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25),
-              ),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => FeedbackRegister(
+            Visibility(visible: admin,child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.feedback_outlined,
+                    color: Colors.brown.shade700,
+                    size: 30,
+                  ),
+                  title: Text(
+                    TKeys.complain.translate(context),
+                    style: TextStyle(
+                        color: Colors.brown.shade800,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 25),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => FeedbackRegister(
                               name: widget.userName.trim(),
                             )));
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Divider(
-                height: 1,
-                indent: 0,
-                endIndent: 10,
-                thickness: 2,
-                color: Colors.brown.shade50,
-              ),
-            ),
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Divider(
+                    height: 1,
+                    indent: 0,
+                    endIndent: 10,
+                    thickness: 2,
+                    color: Colors.brown.shade50,
+                  ),
+                ),
+              ],
+            ),),
             ListTile(
               leading: Icon(
                 Icons.logout_outlined,

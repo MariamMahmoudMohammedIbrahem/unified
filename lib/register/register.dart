@@ -131,7 +131,7 @@ class _RegisterState extends State<Register> {
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.phone, color: Colors.white,),
                           label: Text(TKeys.phone.translate(context),style: const TextStyle(color: Colors.white),),
-                          error: Text('${validatePhoneNumber(phoneController.text)}',style: const TextStyle(color: Colors.white),),
+                          error: Text(' ${validatePhoneNumber(phoneController.text)}',style: const TextStyle(color: Colors.white),),
                           floatingLabelStyle: TextStyle(color: Colors.brown.shade900, letterSpacing: 1.3),
                           labelStyle: TextStyle(color: Colors.brown.shade800, letterSpacing: 1.3),
                           focusedBorder: const UnderlineInputBorder(

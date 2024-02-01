@@ -434,6 +434,27 @@ class _SettingState extends State<Setting> {
       widget.subscribeToCharacteristic(widget.characteristic);
       // await Future.delayed(const Duration(seconds: 1));
       // widget.device.connectable.
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.minute.translate(context)),
+          content: Text(TKeys.restarting.translate(context)),
+          // actions: [
+          //   ElevatedButton(
+          //     onPressed: () {
+          //       Navigator.pop(context);
+          //     },
+          //     style: ElevatedButton.styleFrom(
+          //         foregroundColor: Colors.brown,
+          //         backgroundColor: Colors.brown.shade600,
+          //         disabledForegroundColor: Colors.brown.shade600,
+          //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          //     child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
+          //   ),
+          // ],
+        ),
+      );
       timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
         if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
           setState(() {
@@ -451,29 +472,6 @@ class _SettingState extends State<Setting> {
               builder: (context) => ScanningListScreen(
                 userName: widget.userName,
               ),
-            ),
-          );
-        }
-        else{
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: Colors.brown.shade50,
-              title: Text(TKeys.minute.translate(context)),
-              content: Text(TKeys.restarting.translate(context)),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade600,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-                ),
-              ],
             ),
           );
         }

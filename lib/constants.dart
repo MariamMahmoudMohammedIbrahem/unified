@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 Timer? periodicTimer;
@@ -107,8 +108,8 @@ String maghreb = '';
 String isha = '';
 List<int> prayList = [];
 //zone data from ble
-late num zoneBefore;
-late num zoneAfter;
+num zoneBefore = 00;
+num zoneAfter = 00;
 List<int> zoneList = [];
 //get
 List<int> getDate = [0xAA, 0x02, 0x00, 0x02, 0xAA];
@@ -126,7 +127,7 @@ List<int> getSound4 = [0xAA, 0x96, 0x00, 0x96, 0xAA];
 List<int> setDate = [];
 // List<int> setLocation = [0xAA, 0x07, 0x08, 0x01C90A8E, 0x01D7D4BF, 0xDC, 0xAA];
 List<int> setLocation = [];
-List<int> setZone = [0xAA, 0x04, 0x01, 0x02, 0x07, 0xAA];
+List<int> setZone = [];
 List<int> restart = [0xAA, 0x0F, 0x00, 0x0F, 0xAA];
 List<int> success = [0xAA, 0x11, 0x00, 0x11, 0xAA];
 List<int> sizeError = [0xAA, 0x33, 0x00, 0x33, 0xAA];

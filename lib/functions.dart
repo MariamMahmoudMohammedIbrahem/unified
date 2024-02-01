@@ -185,10 +185,10 @@ void getLongitude() async {
 }
 String? validatePhoneNumber(String? value) {
   if (value == null || value.isEmpty) {
-    return 'Phone number is required';
+    return 'رقم الهاتف مطلوب';
   }
   if (value.length != 11) {
-    return 'Please enter a 11s-digit phone number';
+    return 'من فضلك أدخل رقم الهاتف الخاص بك المكون من 11 رقم';
   }
   // You can add more complex validation logic here if needed
   return ''; // Return null if the input is valid

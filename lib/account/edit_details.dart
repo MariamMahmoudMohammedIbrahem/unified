@@ -69,7 +69,7 @@ class _AccountEditState extends State<AccountEdit> {
           backgroundColor: Colors.brown.shade800,
         leading: IconButton(
           onPressed: () {
-            Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: userName,)));
+            Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context)=>AccountDetails(name: userName,)), (route) => false,);
             userConfirm = false;
           },
           icon: Icon(
