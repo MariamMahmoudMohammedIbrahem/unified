@@ -6,6 +6,7 @@ import 'package:azan/register/login.dart';
 import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../constants.dart';
 import '../functions.dart';
@@ -21,14 +22,15 @@ part 'device_list.g.dart';
 //ignore_for_file: annotate_overrides
 
 class ScanningListScreen extends StatelessWidget {
-  const ScanningListScreen({Key? key, required this.userName}) : super(key: key);
+  const ScanningListScreen({Key? key, required this.userName})
+      : super(key: key);
   final String userName;
   @override
-  Widget build(BuildContext context) =>
-      Consumer4<BleScanner, BleScannerState?, BleLogger, BleDeviceConnector>(
-        builder:
-            (_, bleScanner, bleScannerState, bleLogger, deviceConnector, __) =>
-                Scanning(
+  Widget build(BuildContext context) => Consumer5<BleScanner, BleScannerState?,
+          BleLogger, BleDeviceConnector, ConnectionStateUpdate>(
+        builder: (_, bleScanner, bleScannerState, bleLogger, deviceConnector,
+                connectionStateUpdate, __) =>
+            Scanning(
           scannerState: bleScannerState ??
               const BleScannerState(
                 discoveredDevices: [],
@@ -36,7 +38,9 @@ class ScanningListScreen extends StatelessWidget {
               ),
           startScan: bleScanner.startScan,
           stopScan: bleScanner.stopScan,
-          deviceConnector: deviceConnector, userName: userName,
+          deviceConnector: deviceConnector,
+          userName: userName,
+          connectionStatus: connectionStateUpdate.connectionState,
         ),
       );
 }
@@ -63,12 +67,15 @@ class Scanning extends StatefulWidget {
       required this.stopScan,
       required this.deviceConnector,
       required this.userName,
-      super.key});
+      super.key,
+      required this.connectionStatus});
   final BleScannerState scannerState;
   final void Function(List<Uuid>) startScan;
   final VoidCallback stopScan;
   final BleDeviceConnector deviceConnector;
   final String userName;
+  @override
+  final DeviceConnectionState connectionStatus;
   @override
   State<Scanning> createState() => _ScanningState();
 }
@@ -116,50 +123,94 @@ class _ScanningState extends State<Scanning> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.bleStatusTitle.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
-          content: Text(TKeys.bleStatusHeadline.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          title: Text(
+            TKeys.bleStatusTitle.translate(context),
+            style: const TextStyle(
+                color: Colors.brown, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            TKeys.bleStatusHeadline.translate(context),
+            style: TextStyle(fontSize: 17, color: Colors.brown.shade700),
+          ),
           actions: <Widget>[
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.brown,
                   backgroundColor: Colors.brown.shade200,
                   disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
+              child: Text(
+                TKeys.ok.translate(context),
+                style: TextStyle(color: Colors.brown.shade800, fontSize: 18),
+              ),
             ),
           ],
         );
       },
     );
   }
-
+  Stream<ConnectionStatus> _connectionStatusController = Stream<ConnectionStatus>.value(ConnectionStatus.connected);
+  StreamSubscription<ConnectionStatus>? subscribeStream;
   void connect() {
     for (var device in widget.scannerState.discoveredDevices) {
       widget.deviceConnector.connect(device.id);
-      Navigator.push<void>(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              DeviceInteractionTab(
-                device: device,
-                characteristic:
-                QualifiedCharacteristic(
-                  characteristicId: Uuid.parse(
-                      "0000ffe1-0000-1000-8000-00805f9b34fb"),
-                  serviceId: Uuid.parse(
-                      "0000ffe0-0000-1000-8000-00805f9b34fb"),
-                  deviceId: device.id,
-                ),
-                userName: widget.userName,
-              ),
-        ),
-      );
+      subscribeStream = _connectionStatusController.listen((event) {
+        print('event $event');
+        if(event == ConnectionStatus.connected){
+          Navigator.push<void>(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  DeviceInteractionTab(
+                    device: device,
+                    characteristic:
+                    QualifiedCharacteristic(
+                      characteristicId: Uuid.parse(
+                          "0000ffe1-0000-1000-8000-00805f9b34fb"),
+                      serviceId: Uuid.parse(
+                          "0000ffe0-0000-1000-8000-00805f9b34fb"),
+                      deviceId: device.id,
+                    ),
+                    userName: widget.userName,
+                  ),
+            ),
+          );
+          subscribeStream?.cancel();
+        } else if(event == ConnectionStatus.connecting){
+          Fluttertoast.showToast(msg: 'connecting', toastLength: Toast.LENGTH_LONG,);
+        }
+      });
+      // if(widget.connectionStatus == ConnectionStatus.connected){
+      //   Navigator.push<void>(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (_) =>
+      //           DeviceInteractionTab(
+      //             device: device,
+      //             characteristic:
+      //             QualifiedCharacteristic(
+      //               characteristicId: Uuid.parse(
+      //                   "0000ffe1-0000-1000-8000-00805f9b34fb"),
+      //               serviceId: Uuid.parse(
+      //                   "0000ffe0-0000-1000-8000-00805f9b34fb"),
+      //               deviceId: device.id,
+      //             ),
+      //             userName: widget.userName,
+      //           ),
+      //     ),
+      //   );
+      // } else if(widget.connectionStatus == ConnectionStatus.connecting){
+      //   Fluttertoast.showToast(msg: 'connecting', toastLength: Toast.LENGTH_LONG,);
+      // }else{
+      //   Fluttertoast.showToast(msg: 'not connected', toastLength: Toast.LENGTH_LONG,);
+      // }
+
     }
   }
-
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -174,6 +225,7 @@ class _ScanningState extends State<Scanning> {
 
   void dispose() {
     super.dispose();
+    subscribeStream?.cancel();
   }
   //alert dialog function
   Future<void> _showAlertDialog() async {
@@ -183,11 +235,18 @@ class _ScanningState extends State<Scanning> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.skip.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          title: Text(
+            TKeys.skip.translate(context),
+            style: const TextStyle(
+                color: Colors.brown, fontWeight: FontWeight.bold),
+          ),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text(TKeys.confirmSkipping.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+                Text(
+                  TKeys.confirmSkipping.translate(context),
+                  style: TextStyle(fontSize: 17, color: Colors.brown.shade700),
+                ),
               ],
             ),
           ),
@@ -197,8 +256,12 @@ class _ScanningState extends State<Scanning> {
                   foregroundColor: Colors.brown,
                   backgroundColor: Colors.brown.shade200,
                   disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.scan.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              child: Text(
+                TKeys.scan.translate(context),
+                style: TextStyle(color: Colors.brown.shade800, fontSize: 18),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
                 _startScanning();
@@ -209,15 +272,20 @@ class _ScanningState extends State<Scanning> {
                   foregroundColor: Colors.brown,
                   backgroundColor: Colors.brown.shade600,
                   disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.skip.translate(context), style: const TextStyle(color: Colors.white, fontSize: 18),),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              child: Text(
+                TKeys.skip.translate(context),
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.push<void>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        NotConnected(userName: widget.userName,),
+                    builder: (_) => NotConnected(
+                      userName: widget.userName,
+                    ),
                   ),
                 );
               },
@@ -227,74 +295,28 @@ class _ScanningState extends State<Scanning> {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     final Size screenSize = MediaQuery.of(context).size;
-    return WillPopScope(
-
-      onWillPop: () async {
-        // Custom logic when the back button is pressed
-        // Return true to allow popping the page, or false to prevent it
-        // You can also perform actions before popping the page
-        bool shouldPop = await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              backgroundColor: Colors.brown.shade50,
-              title: Text(TKeys.confirmLogOutTitle.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
-              content: Text(TKeys.confirmLogOutHeadline.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LogIn()),
-                          (route) => false,);
-                  },
-                  style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade200,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: Text(TKeys.yes.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade600,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: Text(TKeys.no.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
-                  onPressed: () {
-                    Navigator.of(context).pop(false);
-                  },
-                ),
-              ],
-            );
-          },
-        );
-
-        return shouldPop ?? false;
-      },
-      child: Scaffold(
-        body: Stack(
-          children: [
-            ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 4),
-              child: Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('images/pattern.jpg'),
-                    fit: BoxFit.cover,
-                  ),
+    return Scaffold(
+      body: Stack(
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 4),
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('images/pattern.jpg'),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-            Positioned.fill(
-              child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: width*.07),
+          ),
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: width * .07),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -304,7 +326,11 @@ class _ScanningState extends State<Scanning> {
                     repeat: true,
                     color: Colors.brown.shade400,
                     ripplesCount: 6,
-                    child: Icon(Icons.bluetooth_rounded, size: width*.4,color: Colors.brown.shade700,),
+                    child: Icon(
+                      Icons.bluetooth_rounded,
+                      size: width * .4,
+                      color: Colors.brown.shade700,
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -316,8 +342,16 @@ class _ScanningState extends State<Scanning> {
                       foregroundColor: Colors.brown,
                       backgroundColor: Colors.brown.shade600,
                       disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
-                    child: Text(widget.scannerState.scanIsInProgress?TKeys.scanning.translate(context):TKeys.scan.translate(context),style: const TextStyle(color: Colors.white, fontSize: 24),),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      widget.scannerState.scanIsInProgress
+                          ? TKeys.scanning.translate(context)
+                          : TKeys.scan.translate(context),
+                      style: const TextStyle(color: Colors.white, fontSize: 24),
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -325,18 +359,35 @@ class _ScanningState extends State<Scanning> {
                       _showAlertDialog();
                     },
                     style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.brown,
-                        backgroundColor: Colors.brown.shade600,
-                        disabledForegroundColor: Colors.brown.shade600,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10),),),
-                    child: Text(TKeys.skip.translate(context),style: const TextStyle(color: Colors.white, fontSize: 24),),
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      TKeys.skip.translate(context),
+                      style: const TextStyle(color: Colors.white, fontSize: 24),
+                    ),
                   ),
-                  Visibility(visible:!widget.scannerState.scanIsInProgress,child: Text(found?'${TKeys.connect.translate(context)} $deviceName':TKeys.notFound.translate(context),style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red.shade800),),),
+                  Visibility(
+                    visible: !widget.scannerState.scanIsInProgress,
+                    child: Text(
+                      found
+                          ? '${TKeys.connect.translate(context)} $deviceName'
+                          : TKeys.notFound.translate(context),
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade800),
+                    ),
+                  ),
                 ],
               ),
+            ),
           ),
-            ),],
-        ),
+        ],
       ),
     );
   }

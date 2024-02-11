@@ -10,9 +10,11 @@ import '../constants.dart';
 import '../functions.dart';
 
 class Register extends StatefulWidget {
-
-  const Register({Key? key, required this.name,}) :super(key:key);
-final String name;
+  const Register({
+    Key? key,
+    required this.name,
+  }) : super(key: key);
+  final String name;
 
   @override
   State<Register> createState() => _RegisterState();
@@ -35,10 +37,11 @@ class _RegisterState extends State<Register> {
     getDocumentIDs();
   }
 
-
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+    String mosqueStatus = TKeys.selectMosque.translate(context);
+    String areaStatus = TKeys.selectArea.translate(context);
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Stack(
@@ -56,7 +59,7 @@ class _RegisterState extends State<Register> {
           ),
           Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: width*.07),
+              padding: EdgeInsets.symmetric(horizontal: width * .07),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -79,37 +82,58 @@ class _RegisterState extends State<Register> {
                     ),
                     //sheikh name
                     Padding(
-                      padding: EdgeInsets.only(left: width * .05,bottom: 10),
+                      padding: EdgeInsets.only(left: width * .05, bottom: 10),
                       child: Container(
                         padding: const EdgeInsets.only(left: 15.0),
-                        decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
+                        decoration: BoxDecoration(
+                            color: Colors.brown.shade800.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(20.0)),
                         child: TextFormField(
                           controller: sheikhController,
                           decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.people, color: Colors.white,),
-                            label: Text(TKeys.sheikhName.translate(context), style: const TextStyle(color: Colors.white),) ,
-                            floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade900;
-                              return TextStyle(color: color, letterSpacing: 1.3);
+                            prefixIcon: const Icon(
+                              Icons.people,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              TKeys.sheikhName.translate(context),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            floatingLabelStyle:
+                                MaterialStateTextStyle.resolveWith(
+                                    (Set<MaterialState> states) {
+                              final Color color =
+                                  states.contains(MaterialState.error)
+                                      ? Theme.of(context).colorScheme.error
+                                      : Colors.brown.shade900;
+                              return TextStyle(
+                                  color: color, letterSpacing: 1.3);
                             }),
-                            labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade800;
-                              return TextStyle(color: color, letterSpacing: 1.3);
+                            labelStyle: MaterialStateTextStyle.resolveWith(
+                                (Set<MaterialState> states) {
+                              final Color color =
+                                  states.contains(MaterialState.error)
+                                      ? Theme.of(context).colorScheme.error
+                                      : Colors.brown.shade800;
+                              return TextStyle(
+                                  color: color, letterSpacing: 1.3);
                             }),
                             focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white, width: 1.0),
+                              borderSide:
+                                  BorderSide(color: Colors.white, width: 1.0),
                             ),
                             border: const UnderlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                              borderSide: BorderSide(width: 1, color: Colors.white),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(20.0)),
+                              borderSide:
+                                  BorderSide(width: 1, color: Colors.white),
                             ),
                           ),
-                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                          onChanged:(value){
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                          onChanged: (value) {
                             sheikhName = value;
                           },
                         ),
@@ -117,60 +141,88 @@ class _RegisterState extends State<Register> {
                     ),
                     //phone number
                     Padding(
-                      padding: EdgeInsets.only(left: width * .05,bottom: 10),
+                      padding: EdgeInsets.only(left: width * .05, bottom: 10),
                       child: Container(
                         padding: const EdgeInsets.only(left: 15.0),
-                        decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
+                        decoration: BoxDecoration(
+                            color: Colors.brown.shade800.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(20.0)),
                         child: TextFormField(
-                        controller: phoneController,
-                        keyboardType: TextInputType.phone, // Set keyboard type for phone number
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly, // Allow only digits
-                          LengthLimitingTextInputFormatter(11), // Limit the length to 10 digits
-                        ],
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.phone, color: Colors.white,),
-                          label: Text(TKeys.phone.translate(context),style: const TextStyle(color: Colors.white),),
-                          error: Text(' ${validatePhoneNumber(phoneController.text)}',style: const TextStyle(color: Colors.white),),
-                          floatingLabelStyle: TextStyle(color: Colors.brown.shade900, letterSpacing: 1.3),
-                          labelStyle: TextStyle(color: Colors.brown.shade800, letterSpacing: 1.3),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white, width: 1.0),
+                          controller: phoneController,
+                          keyboardType: TextInputType
+                              .phone, // Set keyboard type for phone number
+                          inputFormatters: [
+                            FilteringTextInputFormatter
+                                .digitsOnly, // Allow only digits
+                            LengthLimitingTextInputFormatter(
+                                11), // Limit the length to 10 digits
+                          ],
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(
+                              Icons.phone,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              TKeys.phone.translate(context),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            error: Text(
+                              ' ${validatePhoneNumber(phoneController.text)}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            floatingLabelStyle: TextStyle(
+                                color: Colors.brown.shade900,
+                                letterSpacing: 1.3),
+                            labelStyle: TextStyle(
+                                color: Colors.brown.shade800,
+                                letterSpacing: 1.3),
+                            focusedBorder: const UnderlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: Colors.white, width: 1.0),
+                            ),
+                            border: const UnderlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(20.0)),
+                              borderSide:
+                                  BorderSide(width: 1, color: Colors.white),
+                            ),
                           ),
-                          border: const UnderlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                            borderSide: BorderSide(width: 1, color: Colors.white),
-                          ),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 20),
+                          onChanged: (value) {
+                            phone = value;
+                          },
                         ),
-                        style: const TextStyle(color: Colors.white, fontSize: 20),
-                        onChanged: (value) {
-                          phone = value;
-                        },
-                  ),
                       ),
                     ),
                     //area
                     Padding(
-                      padding: EdgeInsets.only(left: width * .05,bottom: 10),
+                      padding: EdgeInsets.only(left: width * .05, bottom: 10),
                       child: SizedBox(
                         height: 55,
                         child: PopupMenuButton<String>(
                           onSelected: (String value) async {
                             setState(() {
                               // Handle the selected value
-                              area= value;
-                              if(value == 'Other'){
+                              area = value;
+                              if (value == TKeys.other.translate(context)) {
                                 areaOther = true;
-                              }
-                              else{
+                              } else {
+                                areaStatus = area;
                                 areaOther = false;
                               }
                             });
-                            QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Cities').doc(area).collection('Mosques').get();
+                            QuerySnapshot querySnapshot =
+                                await FirebaseFirestore.instance
+                                    .collection('Cities')
+                                    .doc(area)
+                                    .collection('Mosques')
+                                    .get();
                             if (querySnapshot.docs.isNotEmpty) {
-                              dataList = querySnapshot.docs.map((doc) => doc.id).toSet();
-                            }
-                            else{
+                              dataList = querySnapshot.docs
+                                  .map((doc) => doc.id)
+                                  .toSet();
+                            } else {
                               dataList = {};
                             }
                           },
@@ -198,7 +250,7 @@ class _RegisterState extends State<Register> {
                             items.add(const PopupMenuDivider());
                             items.add(
                               PopupMenuItem<String>(
-                                value: 'Other',
+                                value: TKeys.other.translate(context),
                                 child: Text(
                                   TKeys.other.translate(context),
                                   style: const TextStyle(
@@ -216,14 +268,18 @@ class _RegisterState extends State<Register> {
                             decoration: BoxDecoration(
                               color: Colors.brown.shade800.withOpacity(0.7),
                               borderRadius: BorderRadius.circular(20.0),
-                              border: Border.all(color: Colors.brown.shade400.withOpacity(.7), width: 2),
+                              border: Border.all(
+                                  color: Colors.brown.shade400.withOpacity(.7),
+                                  width: 2),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Text(
-                                    area ==''? TKeys.selectArea.translate(context): area,
+                                    area == '' && !areaOther
+                                        ? areaStatus
+                                        : TKeys.other.translate(context),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -234,7 +290,8 @@ class _RegisterState extends State<Register> {
                                 const Icon(
                                   Icons.arrow_drop_down,
                                   color: Colors.white,
-                                  size: 35,),
+                                  size: 35,
+                                ),
                               ],
                             ),
                           ),
@@ -244,34 +301,54 @@ class _RegisterState extends State<Register> {
                     Visibility(
                       visible: areaOther,
                       child: Padding(
-                        padding: EdgeInsets.only(left: width * .05,bottom: 10),
+                        padding: EdgeInsets.only(left: width * .05, bottom: 10),
                         child: Container(
                           padding: const EdgeInsets.only(left: 15.0),
-                          decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
+                          decoration: BoxDecoration(
+                              color: Colors.brown.shade800.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(20.0)),
                           child: TextFormField(
                             controller: areaController,
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.area_chart_outlined,color: Colors.white,),
-                              label: Text(TKeys.area.translate(context),style: const TextStyle(color: Colors.white),),
-                              floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                                final Color color = states.contains(MaterialState.error)
-                                    ? Theme.of(context).colorScheme.error
-                                    : Colors.brown.shade900;
-                                return TextStyle(color: color, letterSpacing: 1.3);
+                              prefixIcon: const Icon(
+                                Icons.area_chart_outlined,
+                                color: Colors.white,
+                              ),
+                              label: Text(
+                                TKeys.area.translate(context),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              floatingLabelStyle:
+                                  MaterialStateTextStyle.resolveWith(
+                                      (Set<MaterialState> states) {
+                                final Color color =
+                                    states.contains(MaterialState.error)
+                                        ? Theme.of(context).colorScheme.error
+                                        : Colors.brown.shade900;
+                                return TextStyle(
+                                    color: color, letterSpacing: 1.3);
                               }),
-                              labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                                final Color color = states.contains(MaterialState.error)
-                                    ? Theme.of(context).colorScheme.error
-                                    : Colors.brown.shade800;
-                                return TextStyle(color: color, letterSpacing: 1.3);
+                              labelStyle: MaterialStateTextStyle.resolveWith(
+                                  (Set<MaterialState> states) {
+                                final Color color =
+                                    states.contains(MaterialState.error)
+                                        ? Theme.of(context).colorScheme.error
+                                        : Colors.brown.shade800;
+                                return TextStyle(
+                                    color: color, letterSpacing: 1.3);
                               }),
                               border: const UnderlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                                borderSide: BorderSide(width: 1, color: Colors.brown),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(20.0)),
+                                borderSide:
+                                    BorderSide(width: 1, color: Colors.brown),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                            onChanged:(value){
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold),
+                            onChanged: (value) {
                               setState(() {
                                 area = value;
                               });
@@ -282,7 +359,7 @@ class _RegisterState extends State<Register> {
                     ),
                     //mosque
                     Padding(
-                      padding: EdgeInsets.only(left: width * .05,bottom: 10),
+                      padding: EdgeInsets.only(left: width * .05, bottom: 10),
                       child: SizedBox(
                         height: 55,
                         child: PopupMenuButton<String>(
@@ -290,10 +367,10 @@ class _RegisterState extends State<Register> {
                             setState(() {
                               // Handle the selected value
                               mosque = value;
-                              if(value == 'Other'){
+                              if (value == TKeys.other.translate(context)) {
                                 mosqueOther = true;
-                              }
-                              else{
+                              } else {
+                                mosqueStatus = mosque;
                                 mosqueOther = false;
                               }
                             });
@@ -321,7 +398,7 @@ class _RegisterState extends State<Register> {
                             }
                             items.add(
                               PopupMenuItem<String>(
-                                value: 'Other',
+                                value: TKeys.other.translate(context),
                                 child: Text(
                                   TKeys.other.translate(context),
                                   style: const TextStyle(
@@ -339,14 +416,18 @@ class _RegisterState extends State<Register> {
                             decoration: BoxDecoration(
                               color: Colors.brown.shade800.withOpacity(0.7),
                               borderRadius: BorderRadius.circular(20.0),
-                              border: Border.all(color: Colors.brown.shade400.withOpacity(.7), width: 2),
+                              border: Border.all(
+                                  color: Colors.brown.shade400.withOpacity(.7),
+                                  width: 2),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Text(
-                                    mosque ==''? TKeys.selectMosque.translate(context): mosque,
+                                    mosque == '' && !mosqueOther
+                                        ? mosqueStatus
+                                        : TKeys.other.translate(context),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -357,7 +438,8 @@ class _RegisterState extends State<Register> {
                                 const Icon(
                                   Icons.arrow_drop_down,
                                   color: Colors.white,
-                                  size: 35,),
+                                  size: 35,
+                                ),
                               ],
                             ),
                           ),
@@ -367,34 +449,55 @@ class _RegisterState extends State<Register> {
                     Visibility(
                       visible: mosqueOther,
                       child: Padding(
-                        padding: EdgeInsets.only(left: width * .05,bottom: 10),
+                        padding: EdgeInsets.only(left: width * .05, bottom: 10),
                         child: Container(
                           padding: const EdgeInsets.only(left: 15.0),
-                          decoration: BoxDecoration(color: Colors.brown.shade800.withOpacity(0.7),borderRadius: BorderRadius.circular(20.0)),
+                          decoration: BoxDecoration(
+                              color: Colors.brown.shade800.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(20.0)),
                           child: TextFormField(
                             controller: mosqueController,
+                            cursorColor: Colors.brown,
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.mosque_outlined, color: Colors.white,),
-                              label: Text(TKeys.mosque.translate(context),style: const TextStyle(color: Colors.white),),
-                              floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                                final Color color = states.contains(MaterialState.error)
-                                    ? Theme.of(context).colorScheme.error
-                                    : Colors.brown.shade900;
-                                return TextStyle(color: color, letterSpacing: 1.3);
+                              prefixIcon: const Icon(
+                                Icons.mosque_outlined,
+                                color: Colors.white,
+                              ),
+                              label: Text(
+                                TKeys.mosque.translate(context),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              floatingLabelStyle:
+                                  MaterialStateTextStyle.resolveWith(
+                                      (Set<MaterialState> states) {
+                                final Color color =
+                                    states.contains(MaterialState.error)
+                                        ? Theme.of(context).colorScheme.error
+                                        : Colors.brown.shade900;
+                                return TextStyle(
+                                    color: color, letterSpacing: 1.3);
                               }),
-                              labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                                final Color color = states.contains(MaterialState.error)
-                                    ? Theme.of(context).colorScheme.error
-                                    : Colors.brown.shade800;
-                                return TextStyle(color: color, letterSpacing: 1.3);
+                              labelStyle: MaterialStateTextStyle.resolveWith(
+                                  (Set<MaterialState> states) {
+                                final Color color =
+                                    states.contains(MaterialState.error)
+                                        ? Theme.of(context).colorScheme.error
+                                        : Colors.brown.shade800;
+                                return TextStyle(
+                                    color: color, letterSpacing: 1.3);
                               }),
                               border: const UnderlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                                borderSide: BorderSide(width: 1, color: Colors.brown),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(20.0)),
+                                borderSide:
+                                    BorderSide(width: 1, color: Colors.brown),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                            onChanged:(value){
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold),
+                            onChanged: (value) {
                               setState(() {
                                 mosque = value;
                               });
@@ -410,53 +513,76 @@ class _RegisterState extends State<Register> {
                           await getCurrentDateTime();
                           try{
                             //edit here
-                            await FirebaseFirestore.instance.collection('users').doc(widget.name).update(
-                                {
-                                  'sheikh name': sheikhName,
-                                  'sheikh phone': phone,
-                                  'time': '$formattedTime / $formattedDate',
-                                });
-                            await FirebaseFirestore.instance.collection('users').doc(widget.name).collection('Cities').doc(area).set(
-                                {
-                                  'mosque': mosque,
-                                  'time': '$formattedTime / $formattedDate',
-                                });
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(widget.name)
+                                .update({
+                              'sheikh name': sheikhName,
+                              'sheikh phone': phone,
+                              'time': '$formattedTime / $formattedDate',
+                            });
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(widget.name)
+                                .collection('Cities')
+                                .doc(area)
+                                .set({
+                              'mosque': mosque,
+                              'time': '$formattedTime / $formattedDate',
+                            });
                             // if city isn't in the options
                             //updating cities table
-                            await FirebaseFirestore.instance.collection('Cities').doc(area).collection('Mosques').doc(mosque).update(
-                                {
-                                  'sheikh name': sheikhName,
-                                });
-                            for(String name in citiesIDs){
-                              if(!area.endsWith(name)){
-                                await FirebaseFirestore.instance.collection('Cities').doc(area).set(
-                                    {
-                                      'latitude': '',
-                                      'longitude': '',
-                                    });
-                              }
+                            await FirebaseFirestore.instance
+                                .collection('Cities')
+                                .doc(area)
+                                .collection('Mosques')
+                                .doc(mosque)
+                                .update({
+                              'sheikh name': sheikhName,
+                            });
+                            if(!(citiesIDs.contains(area))){
+                              await FirebaseFirestore.instance
+                                  .collection('Cities')
+                                  .doc(area)
+                                  .set({
+                                'latitude': '',
+                                'longitude': '',
+                              });
                             }
                             //updating mosques table
-                            QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Mosques').where('mosque',isEqualTo: mosque).where('city', isEqualTo: area).get();
+                            QuerySnapshot querySnapshot =
+                                await FirebaseFirestore.instance
+                                    .collection('Mosques')
+                                    .where('mosque', isEqualTo: mosque)
+                                    .where('city', isEqualTo: area)
+                                    .get();
                             if (querySnapshot.docs.isNotEmpty) {
-                              await FirebaseFirestore.instance.collection('Mosques').doc(querySnapshot.docs.first.id).update(
-                                  {
-                                    'connect time':'$formattedTime / $formattedDate',
-                                    'sheikh name': sheikhName,
-                                  });
+                              await FirebaseFirestore.instance
+                                  .collection('Mosques')
+                                  .doc(querySnapshot.docs.first.id)
+                                  .update({
+                                'connect time':
+                                    '$formattedTime / $formattedDate',
+                                'sheikh name': sheikhName,
+                              });
+                            } else {
+                              await FirebaseFirestore.instance
+                                  .collection('Mosques')
+                                  .add({
+                                'mosque': mosque,
+                                'city': area,
+                                'connect time':
+                                    '$formattedTime / $formattedDate',
+                                'sheikh name': sheikhName,
+                              });
                             }
-                            else {
-                              await FirebaseFirestore.instance.collection('Mosques').add(
-                                  {
-                                    'mosque':mosque,
-                                    'city':area,
-                                    'connect time':'$formattedTime / $formattedDate',
-                                    'sheikh name': sheikhName,
-                                  });
-                            }
-                            await Navigator.push(context,MaterialPageRoute(builder: (context)=>ScanningListScreen(userName: widget.name,)));
-                          }
-                          on FirebaseException catch (e){
+                            await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => ScanningListScreen(
+                                          userName: widget.name,
+                                        )));
+                          } on FirebaseException catch (e) {
                             print('error is => $e');
                             showDialog(
                                 context: context,
@@ -464,21 +590,23 @@ class _RegisterState extends State<Register> {
                                   return AlertDialog(
                                     content: Text(
                                       TKeys.problemOccurred.translate(context),
-                                      style: const TextStyle(
-                                          color: Colors.red
-                                      ),
+                                      style: const TextStyle(color: Colors.red),
                                     ),
                                   );
-                                }
-                            );
+                                });
                           }
                         },
                         style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.brown.shade400,
                             backgroundColor: Colors.brown,
                             disabledForegroundColor: Colors.brown.shade600,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                        child: Text(TKeys.register.translate(context),style: const TextStyle(color: Colors.white, fontSize: 24),),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20))),
+                        child: Text(
+                          TKeys.register.translate(context),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 24),
+                        ),
                       ),
                     ),
                   ],

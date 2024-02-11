@@ -1,11 +1,15 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 Timer? periodicTimer;
+Timer? connectionTimer;
 Timer? timer;
 Timer? hourTimer;
 
@@ -56,7 +60,7 @@ bool awaitingResponse = false;
 // bool scanning = false;
 bool found = false;
 bool connected = false;
-bool connectionStatus = false;
+// bool connectionStatus = false;
 bool list1 = false;
 bool list2 = false;
 bool list3 = false;
@@ -106,6 +110,7 @@ String duhr = '';
 String asr = '';
 String maghreb = '';
 String isha = '';
+String area = '';
 List<int> prayList = [];
 //zone data from ble
 num zoneBefore = 00;
@@ -147,3 +152,8 @@ bool mosqueFound = false;
 bool areAllLowerCase = true;
 bool rememberPassword = false;
 // bool showToast = false; // Set your boolean condition here
+//account fields flag
+bool accFlag = false; // didn't get the data yet
+//******************************************Scan And Settings Pages*******************************************//
+// final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+final auth = FirebaseAuth.instance;

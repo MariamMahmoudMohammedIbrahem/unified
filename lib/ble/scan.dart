@@ -3,10 +3,10 @@ import 'dart:ui';
 
 import 'package:azan/ble/settings.dart';
 import 'package:azan/t_key.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:functional_data/functional_data.dart';
 import 'package:provider/provider.dart';
 
@@ -127,181 +127,9 @@ class Connecting extends StatefulWidget {
 }
 
 class _ConnectingState extends State<Connecting> {
-  void resetDateSubscription(int dataType) {
-    switch (dataType) {
-      case 1:
-        dateSubscription?.cancel(); // Cancel the existing subscription
-        dateSubscription = null; // Reset dateSubscription to null
-        break;
-      case 2: //edit
-        praySubscription?.cancel();
-        praySubscription = null;
-        break;
-      case 3:
-        locationSubscription?.cancel();
-        locationSubscription = null;
-        break;
-      case 4:
-        zoneSubscription?.cancel();
-        zoneSubscription = null;
-        break;
-    }
-  }
 
-  Stream<List<int>> _createSubscription() {
-    return ble
-        .subscribeToCharacteristic(
-          QualifiedCharacteristic(
-            characteristicId:
-                Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-            serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-            deviceId: widget.viewModel.deviceId,
-          ),
-        )
-        .distinct()
-        .asyncMap((event) async {
-      // You can process event or modify data before updating the list
-      return List<int>.from(event);
-    });
-  }
 
-  void subscribeCharacteristic(int dataType) {
-    Stream<List<int>> stream;
-    // dateSubscription?.pause();
-    // locationSubscription?.pause();
-    // praySubscription?.pause();
-    // zoneSubscription?.pause();
-    switch (dataType) {
-      case 1:
-        dateSubscription?.resume();
-        locationSubscription?.cancel();
-        praySubscription?.cancel();
-        zoneSubscription?.cancel();
-        if (dateSubscription == null) {
-          stream = _createSubscription();
-          dateSubscription = stream.listen((event) {
-            setState(() {
-              print('1$event');
-              if (event.length == 11) {
-                // dateList = List.from(event);
-                year = num.parse(convertToInt(event, 3, 1).toString().padLeft(3, '20'));
-                month = convertToInt(event, 4, 1);
-                day = convertToInt(event, 5, 1);
-                hour = convertToInt(event, 6, 1);
-                minute = num.parse(convertToInt(event, 7, 1).toString().padLeft(2, '0'));
-                second = num.parse(convertToInt(event, 8, 1).toString().padLeft(2, '0'));
-                list1 = true;
-                awaitingResponse = false;
-              }
-            });
-          });
-        }
-        break;
-      case 2:
-        dateSubscription?.cancel();
-        locationSubscription?.cancel();
-        praySubscription?.resume();
-        zoneSubscription?.cancel();
-        if (praySubscription == null) {
-          stream = _createSubscription();
-          praySubscription = stream.listen((event) {
-            setState(() {
-              print('2$event');
-              if (event.length == 15) {
-                // prayList = List.from(event);
-                fajrHour = convertToInt(event, 3, 1);
-                // fajrMinute = convertToInt(event, 4, 1);
-                fajrMinute = convertToInt(event, 4, 1).toString().padLeft(2, '0');
-                duhrHour = convertToInt(event, 5, 1);
-                // duhrMinute = convertToInt(event, 6, 1);
-                duhrMinute = convertToInt(event, 6, 1).toString().padLeft(2, '0');
-                asrHour = convertToInt(event, 7, 1);
-                // asrMinute = convertToInt(event, 8, 1);
-                asrMinute = convertToInt(event, 8, 1).toString().padLeft(2, '0');
-                maghrebHour = convertToInt(event, 9, 1);
-                // maghrebMinute = convertToInt(event, 10, 1);
-                maghrebMinute = convertToInt(event, 10, 1).toString().padLeft(2, '0');
-                ishaHour = convertToInt(event, 11, 1);
-                // ishaMinute = convertToInt(event, 12, 1);
-                ishaMinute = convertToInt(event, 12, 1).toString().padLeft(2, '0');
-                list2 = true;
-                awaitingResponse = false;
-              }
-            });
-          });
-        }
-        break;
-      case 3:
-        dateSubscription?.cancel();
-        locationSubscription?.resume();
-        praySubscription?.cancel();
-        zoneSubscription?.cancel();
-        if (locationSubscription == null) {
-          stream = _createSubscription();
-          locationSubscription = stream.listen((event) {
-            setState(() {
-              print('3$event');
-              if (event.length == 13) {
-                unitLatitude = convertToInt(event, 3, 4);
-                unitLongitude = convertToInt(event, 7, 4);
-                getCityName();
-                unitLatitude = unitLatitude/1000000;
-                unitLongitude = unitLongitude/1000000;
-                list3 = true;
-                awaitingResponse = false;
-              }
-            });
-          });
-        }
-        break;
-      case 4:
-        dateSubscription?.cancel();
-        locationSubscription?.cancel();
-        praySubscription?.cancel();
-        zoneSubscription?.resume();
-        if (zoneSubscription == null) {
-          stream = _createSubscription();
-          zoneSubscription = stream.listen((event) {
-            setState(() {
-              print('4$event hi');
-              if (event.length == 6) {
-                // zoneList = List.from(event);
-                zoneAfter = convertToInt(event, 3, 1);
-                list4 = true;
-                awaitingResponse = false;
-                // showToast = false;
-              }
-            });
-          });
-        }
-        break;
-    }
-  }
-  Future<void> saveInFirebase() async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userName)
-          .collection('Cities')
-          .doc(storedArea)
-          .update({
-        'fajr': '$fajrHour:$fajrMinute',
-        'duhr': '$duhrHour:$duhrMinute',
-        'asr': '$asrHour:$asrMinute',
-        'maghreb': '$maghrebHour:$maghrebMinute',
-        'isha': '$ishaHour:$ishaMinute',
-        'date': '$day / $month / $year',
-        'time': '$hour:$minute',
-        'longitude': unitLongitude,
-        'latitude': unitLatitude,
-        'zone': zoneAfter,
-      });
-    } catch (e) {
-      print(e);
-    }
-  }
   void getAllDataAndSubscribe() async {
-    // showToast = true;
     List<Map<int, List<int>>> dataSets = [
       {1: getDate},
       {2: getPray},
@@ -317,7 +145,10 @@ class _ConnectingState extends State<Connecting> {
       if (!awaitingResponse) {
         awaitingResponse = true;
         resetDateSubscription(dataType);
-        subscribeCharacteristic(dataType);
+        setState(() {
+          subscribeCharacteristic(dataType, widget.viewModel.deviceId);
+        });
+
         await widget.writeWithoutResponse(widget.characteristic, dataToWrite);
       } else {
         print('Awaiting response, cannot send another packet yet.');
@@ -326,20 +157,20 @@ class _ConnectingState extends State<Connecting> {
     }
     if (!list1) {
       resetDateSubscription(1);
-      subscribeCharacteristic(1);
+      subscribeCharacteristic(1, widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getDate);
     } else if (!list2) {
       //edit
       resetDateSubscription(2);
-      subscribeCharacteristic(2);
+      subscribeCharacteristic(2,widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getPray);
     } else if (!list3) {
       resetDateSubscription(3);
-      subscribeCharacteristic(3);
+      subscribeCharacteristic(3, widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getLocation);
     } else {
       resetDateSubscription(4);
-      subscribeCharacteristic(4);
+      subscribeCharacteristic(4,widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getZone);
     }
   }
@@ -349,31 +180,18 @@ class _ConnectingState extends State<Connecting> {
     setState(() {
       if (widget.viewModel.connectionStatus ==
           DeviceConnectionState.disconnected) {
+        Fluttertoast.showToast(
+          msg: 'device Disconnected',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.SNACKBAR,
+          backgroundColor: Colors.brown.shade700,
+          textColor: Colors.white,
+        );
         hourTimer?.cancel();
         periodicTimer?.cancel();
         deviceName = '';
         found = false;
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Colors.brown.shade50,
-            title: Text(TKeys.error.translate(context)),
-            content: Text(TKeys.lostConnection.translate(context)),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.brown,
-                    backgroundColor: Colors.brown.shade600,
-                    disabledForegroundColor: Colors.brown.shade600,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-              ),
-            ],
-          ),
-        );
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
       }
     });
   }
@@ -445,17 +263,16 @@ class _ConnectingState extends State<Connecting> {
       }
       await widget.writeWithoutResponse(widget.characteristic, restart);
       widget.subscribeToCharacteristic(widget.characteristic);
-      // await Future.delayed(const Duration(seconds: 1));
-      // widget.device.connectable.
-      timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
+      await Future.delayed(const Duration(seconds: 2));
+      // timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
         if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
           setState(() {
             found = false;
             deviceName = '';
             restartFlag = true;
+            hourTimer?.cancel();
+            periodicTimer?.cancel();
           });
-          // Cancel the timer if the condition is met
-          timer?.cancel();
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -466,8 +283,39 @@ class _ConnectingState extends State<Connecting> {
           );
         }
         else{
+          ///show dialog alert that tell to try again
+          Navigator.pop(context);
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              backgroundColor: Colors.brown.shade50,
+              title: Text(TKeys.error.translate(context)),
+              content: Text(TKeys.disconnectHeadline.translate(context)),
+              actions: [
+                ElevatedButton(
+                  onPressed: (){
+                    if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
+                      setState(() {
+                        hourTimer?.cancel();
+                        periodicTimer?.cancel();
+                      });
+                      widget.viewModel.disconnect();
+                    }
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
+                  },
+                  style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.brown,
+                          backgroundColor: Colors.brown.shade600,
+                          disabledForegroundColor: Colors.brown.shade600,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                      child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
+                ),
+              ],
+            ),
+          );
         }
-      });
+      // });
       // if (widget.viewModel.connectionStatus ==
       //     DeviceConnectionState.disconnected) {
       //   setState(() {
@@ -508,22 +356,6 @@ class _ConnectingState extends State<Connecting> {
     }
 
   }
-  Future<void> settingLocation() async {
-    widget.subscribeToCharacteristic(widget.characteristic);
-    await widget.writeWithoutResponse(widget.characteristic, setLocation);
-    responseSubscription = widget
-        .subscribeToCharacteristic(widget.characteristic)
-        .listen((receivedData) {
-      if (receivedData.length == success.length &&
-          receivedData.every(
-                  (element) => element == success[receivedData.indexOf(element)])) {
-        print('Received expected data, setting date and time');
-        responseSubscription?.cancel();
-        print('ready to get data');
-        saveSettingData(2, widget.userName);
-      }
-    });
-  }
 
   @override
   void initState() {
@@ -552,7 +384,7 @@ class _ConnectingState extends State<Connecting> {
         saveSettingData(1, widget.userName);
       }
       else {
-        saveInFirebase();
+        saveInFirebase(widget.userName);
         t.cancel();
       }
     });
@@ -570,10 +402,9 @@ class _ConnectingState extends State<Connecting> {
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _auth = FirebaseAuth.instance;
   signOut() async {
     widget.viewModel.deviceConnector.disconnect(widget.device.id);
-    await _auth.signOut();
+    await auth.signOut();
     Navigator.pushAndRemoveUntil(
         context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
   }
@@ -602,20 +433,37 @@ class _ConnectingState extends State<Connecting> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                   child: Text(TKeys.yes.translate(context),style: TextStyle(color: Colors.brown.shade800,fontSize: 18),),
                   onPressed: () {
-                    setState(() {
-                      deviceName = '';
-                      found = false;
-                    });
-                    widget.viewModel.disconnect();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ScanningListScreen(
-                          userName: widget.userName,
-                        ),
-                      ),
-                      // (route) => false,
-                    );
+                    if(awaitingResponse){
+                      Navigator.pop(context);
+                      Fluttertoast.showToast(
+                        msg: 'can\'t disconnect while getting data',
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.BOTTOM,
+                        backgroundColor: Colors.brown.shade700,
+                        textColor: Colors.white,
+                      );
+                    }
+                    else{
+                      widget.viewModel.disconnect();
+                      if (widget.viewModel.connectionStatus ==
+                          ConnectionStatus.disconnected) {
+                        setState(() {
+                          deviceName = '';
+                          found = false;
+                          periodicTimer?.cancel();
+                          hourTimer?.cancel();
+                        });
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ScanningListScreen(
+                              userName: widget.userName,
+                            ),
+                          ),
+                          // (route) => false,
+                        );
+                      }
+                    }
                   },
                 ),
                 ElevatedButton(
@@ -686,7 +534,7 @@ class _ConnectingState extends State<Connecting> {
                     ),
                     child: Center(
                       child: Text(
-                        widget.userName.trim(),
+                        widget.userName,
                         style: TextStyle(
                           color: Colors.brown.shade700,
                           fontWeight: FontWeight.bold,
@@ -742,7 +590,7 @@ class _ConnectingState extends State<Connecting> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => AccountDetails(
-                                  name: widget.userName.trim(),
+                                  name: widget.userName,
                                 )));
                   },
                 ),
@@ -1238,7 +1086,18 @@ class _ConnectingState extends State<Connecting> {
                             width: width * .8,
                             child: ElevatedButton.icon(
                               onPressed: () async {
-                                settingDate();
+                                if(awaitingResponse){
+                                  Fluttertoast.showToast(
+                                    msg: 'can\'t disconnect while getting data',
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.BOTTOM,
+                                    backgroundColor: Colors.brown.shade700,
+                                    textColor: Colors.white,
+                                  );
+                                }
+                                else{
+                                  settingDate();
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.brown.shade100,
@@ -1306,10 +1165,11 @@ class NotConnected extends StatefulWidget {
 class _NotConnectedState extends State<NotConnected> {
   @override
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _auth = FirebaseAuth.instance;
   @override
   void initState() {
-    skipData(widget.userName);
+    setState(() {
+      skipData(widget.userName);
+    });
     hourTimer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
       setState(() {
         print('skip page timer');
@@ -1320,7 +1180,7 @@ class _NotConnectedState extends State<NotConnected> {
   }
 
   signOut() async {
-    await _auth.signOut();
+    await auth.signOut();
     Navigator.pushAndRemoveUntil(
       context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
   }
@@ -1371,176 +1231,185 @@ class _NotConnectedState extends State<NotConnected> {
         ),
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            SizedBox(
-              height: 150,
-              child: DrawerHeader(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('images/pattern.jpg'),
-                    fit: BoxFit.cover,
+        child: Container(
+          color: Colors.brown.shade50,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              SizedBox(
+                height: 150,
+                child: DrawerHeader(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('images/pattern.jpg'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: Text(
-                    widget.userName.trim(),
-                    style: TextStyle(
-                      color: Colors.brown.shade700,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 26,
+                  child: Center(
+                    child: Text(
+                      widget.userName,
+                      style: TextStyle(
+                        color: Colors.brown.shade700,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 26,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.home,
-                color: Colors.brown.shade700,
-                size: 30,
-              ),
-              title: Text(
-                TKeys.dashboard.translate(context),
-                style: TextStyle(
-                    color: Colors.brown.shade800,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25),
-              ),
-              onTap: () {},
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Divider(
-                height: 1,
-                indent: 0,
-                endIndent: 10,
-                thickness: 2,
-                color: Colors.brown.shade50,
-              ),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.settings,
-                color: Colors.brown.shade700,
-                size: 30,
-              ),
-              title: Text(
-                TKeys.accountDetails.translate(context),
-                style: TextStyle(
-                    color: Colors.brown.shade800,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25),
-              ),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => AccountDetails(
-                              name: widget.userName.trim(),
-                            )));
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Divider(
-                height: 1,
-                indent: 0,
-                endIndent: 10,
-                thickness: 2,
-                color: Colors.brown.shade50,
-              ),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.key_sharp,
-                color: Colors.brown.shade700,
-                size: 30,
-              ),
-              title: Text(
-                TKeys.changePassword.translate(context),
-                style: TextStyle(
-                    color: Colors.brown.shade800,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25),
-              ),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const ResetPassword()));
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Divider(
-                height: 1,
-                indent: 0,
-                endIndent: 10,
-                thickness: 2,
-                color: Colors.brown.shade50,
-              ),
-            ),
-            Visibility(visible: admin,child: Column(
-              children: [
-                ListTile(
-                  leading: Icon(
-                    Icons.feedback_outlined,
-                    color: Colors.brown.shade700,
-                    size: 30,
-                  ),
-                  title: Text(
-                    TKeys.complain.translate(context),
-                    style: TextStyle(
-                        color: Colors.brown.shade800,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 25),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => FeedbackRegister(
-                              name: widget.userName.trim(),
-                            )));
+              ListTile(
+                leading: Icon(
+                  Icons.home,
+                  color: Colors.brown.shade700,
+                  size: 30,
+                ),
+                title: Text(
+                  TKeys.dashboard.translate(context),
+                  style: TextStyle(
+                      color: Colors.brown.shade800,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25),
+                ),
+                onTap: () {
+                  _scaffoldKey.currentState?.closeDrawer();
                   },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Divider(
+                  height: 1,
+                  indent: 0,
+                  endIndent: 10,
+                  thickness: 2,
+                  color: Colors.brown.shade50,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Divider(
-                    height: 1,
-                    indent: 0,
-                    endIndent: 10,
-                    thickness: 2,
-                    color: Colors.brown.shade50,
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.settings,
+                  color: Colors.brown.shade700,
+                  size: 30,
+                ),
+                title: Text(
+                  TKeys.accountDetails.translate(context),
+                  style: TextStyle(
+                      color: Colors.brown.shade800,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25),
+                ),
+                onTap: () {
+                  _scaffoldKey.currentState?.closeDrawer();
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => AccountDetails(
+                                name: widget.userName,
+                              )));
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Divider(
+                  height: 1,
+                  indent: 0,
+                  endIndent: 10,
+                  thickness: 2,
+                  color: Colors.brown.shade50,
+                ),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.key_sharp,
+                  color: Colors.brown.shade700,
+                  size: 30,
+                ),
+                title: Text(
+                  TKeys.changePassword.translate(context),
+                  style: TextStyle(
+                      color: Colors.brown.shade800,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25),
+                ),
+                onTap: () {
+                  _scaffoldKey.currentState?.closeDrawer();
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ResetPassword()));
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Divider(
+                  height: 1,
+                  indent: 0,
+                  endIndent: 10,
+                  thickness: 2,
+                  color: Colors.brown.shade50,
+                ),
+              ),
+              Visibility(visible: admin,child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      Icons.feedback_outlined,
+                      color: Colors.brown.shade700,
+                      size: 30,
+                    ),
+                    title: Text(
+                      TKeys.complain.translate(context),
+                      style: TextStyle(
+                          color: Colors.brown.shade800,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 25),
+                    ),
+                    onTap: () {
+                      _scaffoldKey.currentState?.closeDrawer();
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => FeedbackRegister(
+                                name: widget.userName,
+                              )));
+                    },
                   ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Divider(
+                      height: 1,
+                      indent: 0,
+                      endIndent: 10,
+                      thickness: 2,
+                      color: Colors.brown.shade50,
+                    ),
+                  ),
+                ],
+              ),),
+              ListTile(
+                leading: Icon(
+                  Icons.logout_outlined,
+                  color: Colors.brown.shade700,
+                  size: 30,
                 ),
-              ],
-            ),),
-            ListTile(
-              leading: Icon(
-                Icons.logout_outlined,
-                color: Colors.brown.shade700,
-                size: 30,
+                title: Text(
+                  TKeys.logout.translate(context),
+                  style: TextStyle(
+                      color: Colors.brown.shade800,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25),
+                ),
+                onTap: () {
+                  _scaffoldKey.currentState?.closeDrawer();
+                  //logout
+                  setState(() {
+                    found = false;
+                    deviceName = '';
+                  });
+                  signOut();
+                },
               ),
-              title: Text(
-                TKeys.logout.translate(context),
-                style: TextStyle(
-                    color: Colors.brown.shade800,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25),
-              ),
-              onTap: () {
-                //logout
-                setState(() {
-                  found = false;
-                  deviceName = '';
-                });
-                signOut();
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       body: Stack(
@@ -1624,7 +1493,7 @@ class _NotConnectedState extends State<NotConnected> {
                               width: 5,
                             ),
                             Text(
-                              ishaHour == 00 && ishaMinute == 00? formattedDateUnit: '$day / $month / $year',
+                              ishaHour == 00 && ishaMinute == ''? formattedDateUnit: '$day / $month / $year',
                               style: TextStyle(
                                   color: Colors.brown.shade800,
                                   fontSize: 24,
@@ -1643,7 +1512,7 @@ class _NotConnectedState extends State<NotConnected> {
                               width: 5,
                             ),
                             Text(
-                              ishaHour == 00 && ishaMinute == 00?formattedTimeUnit:'$hour:$minute',
+                              ishaHour == 00 && ishaMinute == ''?formattedTimeUnit:'$hour:$minute',
                               style: TextStyle(
                                   color: Colors.brown.shade800,
                                   fontSize: 24,
@@ -1688,7 +1557,7 @@ class _NotConnectedState extends State<NotConnected> {
                   Padding(
                     padding: EdgeInsets.symmetric(
                         horizontal: width * .07, vertical: 10),
-                    child: Text(storedArea,
+                    child: Text(area,
                       style: TextStyle(
                           color: Colors.brown.shade800, fontSize: 25, fontWeight: FontWeight.bold),),
                   ),
@@ -1736,7 +1605,7 @@ class _NotConnectedState extends State<NotConnected> {
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            ishaHour == 00 && ishaMinute == 00?fajr:'$fajrHour:$fajrMinute',
+                            ishaHour == 00 && ishaMinute == ''?fajr:'$fajrHour:$fajrMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1754,7 +1623,7 @@ class _NotConnectedState extends State<NotConnected> {
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            ishaHour == 00 && ishaMinute == 00?duhr:'$duhrHour:$duhrMinute',
+                            ishaHour == 00 && ishaMinute == ''?duhr:'$duhrHour:$duhrMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1772,7 +1641,7 @@ class _NotConnectedState extends State<NotConnected> {
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            ishaHour == 00 && ishaMinute == 00?asr:'$asrHour:$asrMinute',
+                            ishaHour == 00 && ishaMinute == ''?asr:'$asrHour:$asrMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1790,7 +1659,7 @@ class _NotConnectedState extends State<NotConnected> {
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            ishaHour == 00 && ishaMinute == 00?maghreb:'$maghrebHour:$maghrebMinute',
+                            ishaHour == 00 && ishaMinute == ''?maghreb:'$maghrebHour:$maghrebMinute',
                             style: TextStyle(
                                 color: Colors.brown.shade800,
                                 fontSize: 24,
@@ -1808,7 +1677,7 @@ class _NotConnectedState extends State<NotConnected> {
                                 color: Colors.brown.shade800, fontSize: 25),
                           ),
                           trailing: Text(
-                            ishaHour == 00 && ishaMinute == 00?isha:'$ishaHour:$ishaMinute',
+                            ishaHour == 00 && ishaMinute == ''?isha:'$ishaHour:$ishaMinute',
                             style: TextStyle(
                               color: Colors.brown.shade800,
                               fontSize: 24,

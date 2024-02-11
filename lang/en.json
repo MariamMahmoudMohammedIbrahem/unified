@@ -46,6 +46,7 @@
   "no": "No",
   "confirmExitTitle": "Confirm Exit",
   "confirmExitHeadline": "Do you really want to exit?",
+  "disconnectHeadline": "Please Go Back and Rescan your Unit",
   "dashboard": "Dashboard",
   "accountDetails": "Account Details",
   "changePassword": "Change Password",

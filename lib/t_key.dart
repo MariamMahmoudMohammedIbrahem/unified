@@ -56,6 +56,7 @@ enum TKeys{
   no,
   confirmExitTitle,
   confirmExitHeadline,
+  disconnectHeadline,
   dashboard,
   accountDetails,
   changePassword,

@@ -117,6 +117,7 @@ class _AutoLoginState extends State<AutoLogin> {
             ),
             TextButton(
               onPressed: () {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> LogIn()));
                 const LogIn();
               },
               child: const Text('Login'),

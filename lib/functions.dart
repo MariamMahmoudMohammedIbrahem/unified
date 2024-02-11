@@ -2,8 +2,10 @@ import 'dart:typed_data';
 
 import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:location/location.dart';
 
@@ -194,6 +196,7 @@ String? validatePhoneNumber(String? value) {
   return ''; // Return null if the input is valid
 }
 Future<void> getUserFields(String userId) async {
+  accFlag = true;
   QuerySnapshot querySnapshot = await firestore.collection('users').get();
   //get fields
   print(userId);
@@ -228,100 +231,14 @@ Future<void> getUserFields(String userId) async {
   }
   getLongitude();
 }
-Future<void> saveSettingData(int dataType, String userName) async{
-  String docId = '$setDay-$setMonth-$setYear-$formattedTime';
-  switch(dataType){
-    case 1:
-      //get id of time data if there is no id store
-      // QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Date').where('time of mobile',isEqualTo: '$setHour/$setMinute/$setSecond').get();
-      // if (querySnapshot.docs.isEmpty) {
-        await FirebaseFirestore.instance.collection('users').doc(userName).collection('Date').doc(docId).set(
-            {
-              'time of unit':'$hour/$minute/$second',
-              'date of unit':'$year/$month/$day',
-              'time of mobile':'$setHour/$setMinute/$setSecond',
-              'date of mobile':'$setYear/$setMonth/$setDay',
-              'longitude of mobile':storedLongitude,
-              'latitude of mobile':storedLatitude,
-              'longitude of unit':unitLongitude,
-              'latitude of unit':unitLatitude,
-            });
-      // }
-      setDateTime = false;
-      break;
-    case 2:
-      //set location
-      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Location').doc(docId).set(
-          {
-            'time of mobile':'$setHour/$setMinute/$setSecond',
-            'date of mobile':'$setYear/$setMonth/$setDay',
-            'longitude of mobile':storedLongitude,
-            'latitude of mobile':storedLatitude,
-            'longitude of unit':unitLongitude,
-            'latitude of unit':unitLatitude,
-          'city': storedArea,
-          });
-      //delete the doc and set another one in users
-      final QuerySnapshot subcollectionSnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').get();
-      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(subcollectionSnapshot.docs.first.id).delete().then((value) async => await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(storedArea).set(
-  {
-  'mosque': mosque,
-  'date': '$setDay/$setMonth/$setYear',
-  'time': formattedTime,
-  'zone': zoneAfter,
-  'longitude': storedLongitude,
-  'latitude': storedLatitude,
-  'fajr': '$fajrHour/$fajrMinute',
-  'duhr': '$duhrHour/$duhrMinute',
-  'asr': '$asrHour/$asrMinute',
-  'maghreb': '$maghrebHour/$maghrebMinute',
-  'isha': '$ishaHour/$ishaMinute',
-  })).catchError((error){print('error deleting doc $error');});
-      break;
-    case 3:
-      //set zone
-      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Zone').doc(docId).set(
-          {
-            'time of unit':'$hour/$minute/$second',
-            'date of unit':'$year/$month/$day',
-            'zone before': zoneBefore,
-            'zone after': zoneAfter,
-          });
-      break;
-    case 4:
-      //restart
-      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Restart').doc(docId).set(
-          {
-            'time of unit':'$hour/$minute/$second',
-            'date of unit':'$year/$month/$day',
-            'time of mobile':'$setHour/$setMinute/$setSecond',
-            'date of mobile':'$setYear/$setMonth/$setDay',
-            'longitude of mobile':storedLongitude,
-            'latitude of mobile':storedLatitude,
-            'longitude of unit':unitLongitude,
-            'latitude of unit':unitLatitude,
-          });
-      restartFlag = false;
-      break;
-    case 5:
-      //test
-      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Test').doc(docId).set(
-          {
-            'time of unit':'$hour/$minute/$second',
-            'date of unit':'$year/$month/$day',
-            'time of mobile':'$setHour/$setMinute/$setSecond',
-            'date of mobile':'$setYear/$setMonth/$setDay',
-          });
-      break;
-  }
-}
 //get data from firebase in skiping scanning
 Future<void> skipData(String userId)async{
-  QuerySnapshot  querySnapshot = await firestore.collection('users').get();
+  QuerySnapshot  querySnapshot = await firestore.collection('users').doc(userId).collection('Cities').get(); // get city name
   if(querySnapshot.docs.isNotEmpty){
-    for(String id in usersIDs){
-      if(id.endsWith(userId)) {
-        DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).collection('Cities').doc(storedArea).get();
+    // for(String id in usersIDs){
+    //   if(id.endsWith(userId)) {
+    area = querySnapshot.docs.first.id;
+        DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).collection('Cities').doc(querySnapshot.docs.first.id).get();
         if (userSnapshot.exists) {
           Map<String, dynamic>? userData = userSnapshot.data() as Map<String, dynamic>?;
           if (userData != null && userData.isNotEmpty) {
@@ -334,8 +251,8 @@ Future<void> skipData(String userId)async{
             formattedTimeUnit = userData['time'];
           }
         }
-      }
-    }
+      // }
+    // }
   }
 }
 void showToastMessage() {
@@ -376,4 +293,251 @@ Future<String> getCityName() async{
   composeBlePacket(0x04, [int.parse(storedZone)], 'zone');
 
   return unitArea;
+}
+
+//******************************************Scan And Settings Pages*******************************************//
+
+//reset the subscriptions
+void resetDateSubscription(int dataType) {
+  switch (dataType) {
+    case 1:
+      dateSubscription?.cancel(); // Cancel the existing subscription
+      dateSubscription = null; // Reset dateSubscription to null
+      break;
+    case 2: //edit
+      praySubscription?.cancel();
+      praySubscription = null;
+      break;
+    case 3:
+      locationSubscription?.cancel();
+      locationSubscription = null;
+      break;
+    case 4:
+      zoneSubscription?.cancel();
+      zoneSubscription = null;
+      break;
+  }
+}
+//initialize the subscription before getting the data from the unit
+Stream<List<int>> createSubscription(String deviceId) {
+  return ble
+      .subscribeToCharacteristic(
+    QualifiedCharacteristic(
+      characteristicId:
+      Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
+      serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
+      deviceId: deviceId,
+    ),
+  )
+      .distinct()
+      .asyncMap((event) async {
+    // You can process event or modify data before updating the list
+    return List<int>.from(event);
+  });
+}
+//pause and complete the subscriptions, filter and reformat the received data
+void subscribeCharacteristic(int dataType, String deviceId) {
+  Stream<List<int>> stream;
+  switch (dataType) {
+    case 1:
+      dateSubscription?.resume();
+      locationSubscription?.pause();
+      praySubscription?.pause();
+      zoneSubscription?.pause();
+      if (dateSubscription == null) {
+        stream = createSubscription(deviceId);
+        dateSubscription = stream.listen((event) {
+            print('1$event');
+            if (event.length == 11) {
+              year = num.parse(convertToInt(event, 3, 1).toString().padLeft(3, '20'));
+              month = convertToInt(event, 4, 1);
+              day = convertToInt(event, 5, 1);
+              hour = convertToInt(event, 6, 1);
+              minute = num.parse(convertToInt(event, 7, 1).toString().padLeft(2, '0'));
+              second = num.parse(convertToInt(event, 8, 1).toString().padLeft(2, '0'));
+              list1 = true;
+              awaitingResponse = false;
+            }
+        });
+      }
+      break;
+    case 2:
+      dateSubscription?.pause();
+      locationSubscription?.pause();
+      praySubscription?.resume();
+      zoneSubscription?.pause();
+      if (praySubscription == null) {
+        stream = createSubscription(deviceId);
+        praySubscription = stream.listen((event) {
+            print('2$event');
+            if (event.length == 15) {
+              fajrHour = convertToInt(event, 3, 1);
+              fajrMinute = convertToInt(event, 4, 1).toString().padLeft(2, '0');
+              duhrHour = convertToInt(event, 5, 1);
+              duhrMinute = convertToInt(event, 6, 1).toString().padLeft(2, '0');
+              asrHour = convertToInt(event, 7, 1);
+              asrMinute = convertToInt(event, 8, 1).toString().padLeft(2, '0');
+              maghrebHour = convertToInt(event, 9, 1);
+              maghrebMinute = convertToInt(event, 10, 1).toString().padLeft(2, '0');
+              ishaHour = convertToInt(event, 11, 1);
+              ishaMinute = convertToInt(event, 12, 1).toString().padLeft(2, '0');
+              list2 = true;
+              awaitingResponse = false;
+            }
+        });
+      }
+      break;
+    case 3:
+      dateSubscription?.pause();
+      locationSubscription?.resume();
+      praySubscription?.pause();
+      zoneSubscription?.pause();
+      if (locationSubscription == null) {
+        stream = createSubscription(deviceId);
+        locationSubscription = stream.listen((event) {
+            print('3$event');
+            if (event.length == 13) {
+              unitLatitude = convertToInt(event, 3, 4);
+              unitLongitude = convertToInt(event, 7, 4);
+              getCityName();
+              unitLatitude = unitLatitude/1000000;
+              unitLongitude = unitLongitude/1000000;
+              list3 = true;
+              awaitingResponse = false;
+            }
+        });
+      }
+      break;
+    case 4:
+      dateSubscription?.pause();
+      locationSubscription?.pause();
+      praySubscription?.pause();
+      zoneSubscription?.resume();
+      if (zoneSubscription == null) {
+        stream = createSubscription(deviceId);
+        zoneSubscription = stream.listen((event) {
+            print('4$event hi');
+            if (event.length == 6) {
+              zoneAfter = convertToInt(event, 3, 1);
+              list4 = true;
+              awaitingResponse = false;
+            }
+        });
+      }
+      break;
+  }
+}
+// each time the user gets/reloads the data from the unit save the received data
+Future<void> saveInFirebase(userName) async {
+  try {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userName)
+        .collection('Cities')
+        .doc(storedArea)
+        .update({
+      'fajr': '$fajrHour:$fajrMinute',
+      'duhr': '$duhrHour:$duhrMinute',
+      'asr': '$asrHour:$asrMinute',
+      'maghreb': '$maghrebHour:$maghrebMinute',
+      'isha': '$ishaHour:$ishaMinute',
+      'date': '$day / $month / $year',
+      'time': '$hour:$minute',
+      'current time':formattedTime,
+      'current date':'$setDay / $setMonth / $setYear',
+      'longitude': unitLongitude,
+      'latitude': unitLatitude,
+      'zone': zoneAfter,
+    });
+  } catch (e) {
+    print(e);
+  }
+}
+// incase there is setting to date/location/zone/restart/test save the data needed for this action
+Future<void> saveSettingData(int dataType, String userName) async{
+  String docId = '$setDay-$setMonth-$setYear-$formattedTime';
+  switch(dataType){
+    case 1:
+    //get id of time data if there is no id store
+    // QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Date').where('time of mobile',isEqualTo: '$setHour/$setMinute/$setSecond').get();
+    // if (querySnapshot.docs.isEmpty) {
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Date').doc(docId).set(
+          {
+            'time of unit':'$hour/$minute/$second',
+            'date of unit':'$year/$month/$day',
+            'time of mobile':'$setHour/$setMinute/$setSecond',
+            'date of mobile':'$setYear/$setMonth/$setDay',
+            'longitude of mobile':storedLongitude,
+            'latitude of mobile':storedLatitude,
+            'longitude of unit':unitLongitude,
+            'latitude of unit':unitLatitude,
+          });
+      // }
+      setDateTime = false;
+      break;
+    case 2:
+    //set location
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Location').doc(docId).set(
+          {
+            'time of mobile':'$setHour/$setMinute/$setSecond',
+            'date of mobile':'$setYear/$setMonth/$setDay',
+            'longitude of mobile':storedLongitude,
+            'latitude of mobile':storedLatitude,
+            'longitude of unit':unitLongitude,
+            'latitude of unit':unitLatitude,
+            'city': storedArea,
+          });
+      //delete the doc and set another one in users
+      final QuerySnapshot subcollectionSnapshot = await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').get();
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(subcollectionSnapshot.docs.first.id).delete().then((value) async => await FirebaseFirestore.instance.collection('users').doc(userName).collection('Cities').doc(storedArea).set(
+          {
+            'mosque': mosque,
+            'current date': '$setDay/$setMonth/$setYear',
+            'current time': formattedTime,
+            'zone': zoneAfter,
+            'longitude': storedLongitude,
+            'latitude': storedLatitude,
+            'fajr': '$fajrHour/$fajrMinute',
+            'duhr': '$duhrHour/$duhrMinute',
+            'asr': '$asrHour/$asrMinute',
+            'maghreb': '$maghrebHour/$maghrebMinute',
+            'isha': '$ishaHour/$ishaMinute',
+          })).catchError((error){print('error deleting doc $error');});
+      break;
+    case 3:
+    //set zone
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Zone').doc(docId).set(
+          {
+            'time of unit':'$hour/$minute/$second',
+            'date of unit':'$year/$month/$day',
+            'zone before': zoneBefore,
+            'zone after': zoneAfter,
+          });
+      break;
+    case 4:
+    //restart
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Restart').doc(docId).set(
+          {
+            'time of unit':'$hour/$minute/$second',
+            'date of unit':'$year/$month/$day',
+            'time of mobile':'$setHour/$setMinute/$setSecond',
+            'date of mobile':'$setYear/$setMonth/$setDay',
+            'longitude of mobile':storedLongitude,
+            'latitude of mobile':storedLatitude,
+            'longitude of unit':unitLongitude,
+            'latitude of unit':unitLatitude,
+          });
+      restartFlag = false;
+      break;
+    case 5:
+    //test
+      await FirebaseFirestore.instance.collection('users').doc(userName).collection('Test').doc(docId).set(
+          {
+            'time of unit':'$hour/$minute/$second',
+            'date of unit':'$year/$month/$day',
+            'time of mobile':'$setHour/$setMinute/$setSecond',
+            'date of mobile':'$setYear/$setMonth/$setDay',
+          });
+      break;
+  }
 }

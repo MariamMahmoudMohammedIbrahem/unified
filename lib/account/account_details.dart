@@ -20,7 +20,8 @@ class _AccountDetailsState extends State<AccountDetails> {
   void initState(){
     super.initState();
     setState(() {
-      if(sheikhName.isEmpty){ // add condition if updated
+      if(!accFlag){ // add condition if updated
+        showToastMessage();
         getUserFields(widget.name);
       }
     });
@@ -103,7 +104,7 @@ class _AccountDetailsState extends State<AccountDetails> {
                           ),
                           IconButton(
                             onPressed: (){
-                              Navigator.push(context,MaterialPageRoute(builder: (context)=>AccountEdit(name: widget.name,)));
+                              Navigator.push(context,MaterialPageRoute(settings: const RouteSettings(name: "/Page1"),builder: (context)=>AccountEdit(name: widget.name,)));
                             },
                             icon: Icon(Icons.edit_outlined,color: Colors.brown.shade800,size: 30,),
                           ),

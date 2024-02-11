@@ -155,9 +155,10 @@ class LocationPermission extends StatefulWidget {
 
 class _LocationPermissionState extends State<LocationPermission> {
   Future<void> _requestLocationPermission() async {
-    PermissionStatus status = await Permission.location.request();
+    PermissionStatus statusLocation = await Permission.location.request();
+    PermissionStatus statusBluetooth = await Permission.bluetooth.request();
 
-    if (status == PermissionStatus.granted) {
+    if (statusLocation == PermissionStatus.granted && statusBluetooth == PermissionStatus.granted) {
       // Location permission granted, perform your actions
       print('Location permission granted');
     } else {
@@ -187,8 +188,8 @@ class _LocationPermissionState extends State<LocationPermission> {
   void initState(){
     super.initState();
     // Preload images
-    precacheImage(const AssetImage('images/pattern.jpg'), context);
-    precacheImage(const AssetImage('images/appIcon.jpg'), context);
+    // precacheImage(const AssetImage('images/pattern.jpg'), context);
+    // precacheImage(const AssetImage('images/appIcon.jpg'), context);
   }
   @override
   Widget build(BuildContext context) {

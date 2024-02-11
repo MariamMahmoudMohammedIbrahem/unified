@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:azan/t_key.dart';
@@ -15,6 +16,8 @@ class _ResetPasswordState extends State<ResetPassword> {
 
   late String _email;
   final _auth = FirebaseAuth.instance;
+  bool isEmailVerified = false;
+  Timer? _timer;
   void sendVerificationEmail() async {
     User? user = FirebaseAuth.instance.currentUser;
 
@@ -50,7 +53,21 @@ class _ResetPasswordState extends State<ResetPassword> {
       );
     }
   }
+  checkEmailVerified() async {
+    await FirebaseAuth.instance.currentUser?.reload();
 
+    setState(() {
+      isEmailVerified = FirebaseAuth.instance.currentUser!.emailVerified;
+    });
+
+    if (isEmailVerified) {
+      // TODO: implement your code after email verification
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Email Successfully Verified")));
+
+      _timer?.cancel();
+    }
+  }
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;

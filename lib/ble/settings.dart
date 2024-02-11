@@ -455,7 +455,8 @@ class _SettingState extends State<Setting> {
           // ],
         ),
       );
-      timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
+      await Future.delayed(Duration(seconds: 2));
+      // timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
         if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
           setState(() {
             found = false;
@@ -464,7 +465,7 @@ class _SettingState extends State<Setting> {
           });
 
           // Cancel the timer if the condition is met
-          timer?.cancel();
+          // timer?.cancel();
 
           Navigator.push(
             context,
@@ -475,7 +476,7 @@ class _SettingState extends State<Setting> {
             ),
           );
         }
-      });
+      // });
       // if (widget.viewModel.connectionStatus ==
       //     DeviceConnectionState.disconnected) {
       //   setState(() {
