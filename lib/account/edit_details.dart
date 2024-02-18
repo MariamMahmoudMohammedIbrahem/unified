@@ -2,11 +2,9 @@ import 'dart:ui';
 
 import 'package:azan/constants.dart';
 import 'package:azan/t_key.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../functions.dart';
-import 'account_details.dart';
 
 class AccountEdit extends StatefulWidget {
   const AccountEdit({super.key, required this.name});
@@ -16,7 +14,7 @@ class AccountEdit extends StatefulWidget {
   State<AccountEdit> createState() => _AccountEditState();
 }
 
-var userNameController = TextEditingController();
+// var userNameController = TextEditingController();
 var sheikhNameController = TextEditingController();
 var sheikhNumberController = TextEditingController();
 var userEmailController = TextEditingController();
@@ -40,7 +38,7 @@ class _AccountEditState extends State<AccountEdit> {
     updatedUserEmail = email;
     updatedArea = storedArea;
     updatedMosque = mosque;
-    userNameController = TextEditingController(text: widget.name);
+    // userNameController = TextEditingController(text: widget.name);
     sheikhNameController = TextEditingController(text: sheikhName);
     sheikhNumberController = TextEditingController(text: sheikhPhone);
     userEmailController = TextEditingController(text: email);
@@ -54,7 +52,7 @@ class _AccountEditState extends State<AccountEdit> {
 
   @override
   void dispose() {
-    userConfirm = false;
+    // userConfirm = false;
     super.dispose();
   }
 
@@ -71,7 +69,7 @@ class _AccountEditState extends State<AccountEdit> {
             Navigator.pop(context);
             // Navigator.of(context)
             //     .popUntil(ModalRoute.withName("/Page1"));
-            userConfirm = false;
+            // userConfirm = false;
           },
           icon: Icon(
             Icons.arrow_back,
@@ -137,81 +135,7 @@ class _AccountEditState extends State<AccountEdit> {
                               ),
                             ],
                           ),
-                          //username
-                          Text(
-                            TKeys.userName.translate(context),
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.brown.shade700,
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                EdgeInsets.only(left: width * .05, bottom: 10),
-                            child: Container(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              decoration: BoxDecoration(
-                                  color: Colors.brown.shade800.withOpacity(0.7),
-                                  borderRadius: BorderRadius.circular(20.0)),
-                              child: TextFormField(
-                                controller: userNameController,
-                                cursorColor: Colors.brown,
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(
-                                    Icons.supervised_user_circle_outlined,
-                                    color: Colors.white,
-                                  ),
-                                  // hintText: 'Username',
-                                  floatingLabelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade900;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  labelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade800;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  focusedBorder: const UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: Colors.white, width: 1.0),
-                                  ),
-                                  border: const UnderlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(20.0)),
-                                    borderSide: BorderSide(
-                                        width: 1, color: Colors.white),
-                                  ),
-                                ),
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                onChanged: (value) async {
-                                  setState(() {
-                                    userName = value;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                          Visibility(
-                              visible: userConfirm,
-                              child: Text(
-                                TKeys.userNameError.translate(context),
-                                style: const TextStyle(color: Colors.red),
-                              )),
-                          //sheikh name
+                          // sheikh name
                           Text(
                             TKeys.sheikhName.translate(context),
                             style: TextStyle(
@@ -230,6 +154,11 @@ class _AccountEditState extends State<AccountEdit> {
                               child: TextFormField(
                                 controller: sheikhNameController,
                                 cursorColor: Colors.brown,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty)
+                                    return TKeys.validator.translate(context);
+                                  return null;
+                                },
                                 decoration: InputDecoration(
                                   prefixIcon: const Icon(
                                     Icons.person,
@@ -294,6 +223,11 @@ class _AccountEditState extends State<AccountEdit> {
                               child: TextFormField(
                                 controller: sheikhNumberController,
                                 cursorColor: Colors.brown,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty)
+                                    return TKeys.validator.translate(context);
+                                  return null;
+                                },
                                 decoration: InputDecoration(
                                   prefixIcon: const Icon(
                                     Icons.phone,
@@ -358,6 +292,11 @@ class _AccountEditState extends State<AccountEdit> {
                               child: TextFormField(
                                 controller: userEmailController,
                                 cursorColor: Colors.brown,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty)
+                                    return TKeys.validator.translate(context);
+                                  return null;
+                                },
                                 decoration: InputDecoration(
                                   prefixIcon: const Icon(
                                     Icons.email_outlined,
@@ -422,7 +361,8 @@ class _AccountEditState extends State<AccountEdit> {
                                     // Handle the selected value
                                     updatedArea = value;
                                     getMosquesList(value);
-                                    if (value == TKeys.other.translate(context)) {
+                                    if (value ==
+                                        TKeys.other.translate(context)) {
                                       areaOther = true;
                                     } else {
                                       areaOther = false;
@@ -486,7 +426,9 @@ class _AccountEditState extends State<AccountEdit> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          areaOther?TKeys.other.translate(context):updatedArea,
+                                          areaOther
+                                              ? TKeys.other.translate(context)
+                                              : updatedArea,
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -519,6 +461,11 @@ class _AccountEditState extends State<AccountEdit> {
                                 child: TextFormField(
                                   controller: areaController,
                                   cursorColor: Colors.brown,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty)
+                                      return TKeys.validator.translate(context);
+                                    return null;
+                                  },
                                   decoration: InputDecoration(
                                     prefixIcon: const Icon(
                                       Icons.area_chart_outlined,
@@ -588,7 +535,8 @@ class _AccountEditState extends State<AccountEdit> {
                                   setState(() {
                                     // Handle the selected value
                                     updatedMosque = value;
-                                    if (value == TKeys.other.translate(context)) {
+                                    if (value ==
+                                        TKeys.other.translate(context)) {
                                       mosqueOther = true;
                                     } else {
                                       mosqueOther = false;
@@ -651,7 +599,9 @@ class _AccountEditState extends State<AccountEdit> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          mosqueOther?TKeys.other.translate(context):updatedMosque,
+                                          mosqueOther
+                                              ? TKeys.other.translate(context)
+                                              : updatedMosque,
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -684,6 +634,12 @@ class _AccountEditState extends State<AccountEdit> {
                                 child: TextFormField(
                                   controller: mosqueController,
                                   cursorColor: Colors.brown,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return TKeys.validator.translate(context);
+                                    }
+                                    return null;
+                                  },
                                   decoration: InputDecoration(
                                     prefixIcon: const Icon(
                                       Icons.mosque_outlined,
@@ -741,328 +697,79 @@ class _AccountEditState extends State<AccountEdit> {
                               width: width * .8,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  //show alert dialog if no data is updated
-                                  if (widget.name != userName ||
-                                      updatedSheikhName != sheikhName ||
-                                      updatedSheikhNumber != sheikhPhone ||
-                                      updatedUserEmail != email ||
-                                      updatedArea != storedArea ||
-                                      updatedMosque != mosque) {
-                                    //something is updated
-                                    //update the data in firebase
-                                    if (widget.name != null) {
-                                      //if username is in use
-                                      try {
-                                        //update users fields (case: name is updated) in users collection
-                                        if (widget.name != userName) {
-                                          for (String name in usersIDs) {
-                                            if (name.endsWith(userName)) {
-                                              setState(() {
-                                                userConfirm = true;
-                                              });
-                                              break;
-                                            } else {
-                                              firestore
-                                                  .collection('users')
-                                                  .doc(widget.name)
-                                                  .delete()
-                                                  .then((value) {
-                                                // Check if the document is deleted successfully
-                                                firestore
-                                                    .collection('users')
-                                                    .doc(widget.name)
-                                                    .get()
-                                                    .then((doc) {
-                                                  //check if deletion is successful and then save the data
-                                                  if (!doc.exists) {
-                                                    // Document is deleted, proceed with the set operation
-                                                    //password missed
-                                                    firestore
-                                                        .collection('users')
-                                                        .doc(userName)
-                                                        .set({
-                                                      'sheikh name':
-                                                          updatedSheikhName,
-                                                      'sheikh phone':
-                                                          updatedSheikhNumber,
-                                                      'user email':
-                                                          updatedUserEmail,
-                                                      'time':
-                                                          getCurrentDateTime(),
-                                                      'note': 'edited data',
-                                                    }).then((_) {
-                                                      // Set operation completed
-                                                      print(
-                                                          'Document set operation completed.');
-                                                    }).catchError((error) {
-                                                      // Handle errors in the set operation
-                                                      print(
-                                                          'Error setting document: $error');
-                                                    });
-                                                  }
-                                                  //if not show an alertdialog
-                                                  else {
-                                                    // Document still exists, deletion might not have been successful
-                                                    print(
-                                                        'Document deletion unsuccessful.');
-                                                  }
-                                                });
-                                              }).catchError((error) {
-                                                // Handle errors in the deletion operation
-                                                print(
-                                                    'Error deleting document: $error');
-                                              });
-                                            }
-                                          }
-                                        }
-                                        //if username isn't updated but other data (sheikh name || sheikh number || email)
-                                        else {
-                                          //update users (case: sheikh name || sheikh number || email is updated)
-                                          await FirebaseFirestore.instance
-                                              .collection('users')
-                                              .doc(userName)
-                                              .update({
-                                            'sheikh name': updatedSheikhName,
-                                            'sheikh phone': updatedSheikhNumber,
-                                            'user email': updatedUserEmail,
-                                            'time': getCurrentDateTime(),
-                                            'note': 'edited data',
-                                          });
-                                        }
-                                        // update cities and mosques in Cities collection
-                                        if (updatedArea != storedArea &&
-                                            updatedArea.isNotEmpty) {
-                                          //check if the city is in the database
-                                          if (citiesIDs.contains(updatedArea)) {
-                                            //if mosque is in city
-                                            for (String mosque in dataList) {
-                                              if (mosque
-                                                  .endsWith(updatedMosque)) {
-                                                //update sheikhname
-                                                if (updatedSheikhName !=
-                                                    sheikhName) {
-                                                  FirebaseFirestore.instance
-                                                      .collection('Cities')
-                                                      .doc(updatedArea)
-                                                      .collection('Mosques')
-                                                      .doc(updatedMosque)
-                                                      .update({
-                                                    'sheikh name':
-                                                        updatedSheikhName,
-                                                  });
-                                                }
-                                                mosqueFound = true;
-                                              }
-                                            }
-                                            if (!mosqueFound) {
-                                              FirebaseFirestore.instance
-                                                  .collection('Cities')
-                                                  .doc(updatedArea)
-                                                  .collection('Mosques')
-                                                  .doc(updatedMosque)
-                                                  .set({
-                                                'sheikh name':
-                                                    updatedSheikhName,
-                                              });
-                                            }
-                                          }
-                                          //add the city and add the mosque
-                                          else {
-                                            ///check if longitude and latitude will be inserted manually
-                                            FirebaseFirestore.instance
-                                                .collection('Cities')
-                                                .doc(updatedArea)
-                                                .collection('Mosques')
-                                                .doc(updatedMosque)
-                                                .set({
-                                              'sheikh name': updatedSheikhName,
-                                            });
-                                          }
-                                        }
-                                        //update mosques
-                                        if (updatedMosque != mosque &&
-                                            updatedMosque.isNotEmpty) {
-                                          //reset sheikh name in previous mosque
-                                          final printingData =
-                                              await FirebaseFirestore.instance
-                                                  .collection('Mosques')
-                                                  .where('mosque',
-                                                      isEqualTo: mosque)
-                                                  .where('city',
-                                                      isEqualTo: updatedArea)
-                                                  .get();
-                                          //reset sheikh name
-                                          if (printingData.docs.isNotEmpty) {
-                                            // printingData.docs.forEach((doc) async{
-                                            try {
-                                              DocumentReference docRef =
-                                                  FirebaseFirestore.instance
-                                                      .collection('Mosques')
-                                                      .doc(printingData
-                                                          .docs.first.id);
-                                              await docRef.update({
-                                                'sheikh name': '',
-                                                'connect time':
-                                                    getCurrentDateTime(),
-                                              });
-                                            } catch (e) {
-                                              print('got a problem $e');
-                                            }
-                                            // });
-                                          }
-                                          //if new mosque is in the database => update the sheikh name in mosque
-                                          final inDatabase =
-                                              await FirebaseFirestore
-                                                  .instance
-                                                  .collection('Mosques')
-                                                  .where('mosque',
-                                                      isEqualTo: updatedMosque)
-                                                  .where('city',
-                                                      isEqualTo: updatedArea)
-                                                  .get();
-                                          if (inDatabase.docs.isNotEmpty) {
-                                            // inDatabase.docs.forEach((doc)async{
-                                            try {
-                                              DocumentReference docRef =
-                                                  FirebaseFirestore.instance
-                                                      .collection('Mosques')
-                                                      .doc(inDatabase
-                                                          .docs.first.id);
-                                              await docRef.update({
-                                                'sheikh name':
-                                                    updatedSheikhName,
-                                                'connect time':
-                                                    getCurrentDateTime(),
-                                              });
-                                            } catch (e) {
-                                              print('got a problem $e');
-                                            }
-                                            // });
-                                          }
-                                          //else if the new mosque isn't fount in the database
-                                          else {
-                                            FirebaseFirestore.instance
-                                                .collection('Mosques')
-                                                .add({
-                                              'city': updatedArea,
-                                              'connect time':
-                                                  getCurrentDateTime(),
-                                              'mosque': updatedMosque,
-                                              'sheikh name': updatedSheikhName,
-                                            });
-                                          }
-                                          //update cities and mosques in users
-                                          if (storedArea != updatedArea &&
-                                              updatedArea.isNotEmpty) {
-                                            if (mosque != updatedMosque &&
-                                                updatedMosque.isNotEmpty) {
-                                              FirebaseFirestore.instance
-                                                  .collection('users')
-                                                  .doc(userName)
-                                                  .collection('Cities')
-                                                  .doc(storedArea)
-                                                  .delete()
-                                                  .then((value) =>
-                                                      FirebaseFirestore.instance
-                                                          .collection('users')
-                                                          .doc(userName)
-                                                          .collection('Cities')
-                                                          .doc(updatedArea)
-                                                          .set({
-                                                        'mosque': updatedMosque,
-                                                      }))
-                                                  .catchError((error) {
-                                                // Handle errors in the deletion operation
-                                                print(
-                                                    'Error deleting document: $error');
-                                              });
-                                            } else {
-                                              DocumentSnapshot
-                                                  currentDocSnapshot =
-                                                  await FirebaseFirestore
-                                                      .instance
-                                                      .collection('users')
-                                                      .doc(userName)
-                                                      .collection('Cities')
-                                                      .doc(storedArea)
-                                                      .get();
-                                              // Check if the current document exists
-                                              if (currentDocSnapshot.exists) {
-                                                // Get the data from the current document
-                                                Map<String, dynamic> data =
-                                                    currentDocSnapshot.data()
-                                                        as Map<String, dynamic>;
-
-                                                // Create a new document with the new ID and set the data
-                                                await FirebaseFirestore.instance
-                                                    .collection('users')
-                                                    .doc(userName)
-                                                    .collection('Cities')
-                                                    .doc(updatedArea)
-                                                    .set(data);
-
-                                                // Optionally, delete the old document
-                                                await FirebaseFirestore.instance
-                                                    .collection('users')
-                                                    .doc(userName)
-                                                    .collection('Cities')
-                                                    .doc(storedArea)
-                                                    .delete();
-                                              }
-                                            }
-                                          } else {
-                                            if (mosque != updatedMosque &&
-                                                updatedMosque.isNotEmpty) {
-                                              // FirebaseFirestore.instance.collection('users').doc(userNameController.text).collection('Cities').doc(area).delete().then((value) => );
-                                              FirebaseFirestore.instance
-                                                  .collection('users')
-                                                  .doc(userName)
-                                                  .collection('Cities')
-                                                  .doc(updatedArea)
-                                                  .update({
-                                                'mosque': updatedMosque,
-                                              });
-                                            }
-                                          }
-                                        }
-                                        print('Done');
-                                        accFlag = false;
-                                        Navigator.pop(context);
-                                        //should navigate only if data is updated //move its location in code and think if i should navigate to
-                                        // Navigator.pushReplacement(
-                                        //   context,
-                                        //   MaterialPageRoute(
-                                        //     builder: (context) => AccountDetails(
-                                        //       name: userName,
-                                        //     ),
-                                        //   ),
-                                        //   // (route) => false,
-                                        // );
-                                      } catch (e) {
-                                        print(e);
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => AlertDialog(
+                                      backgroundColor: Colors.brown.shade50,
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          CircularProgressIndicator(color: Colors.brown.shade700,),
+                                          const SizedBox(height: 16.0),
+                                          Text(TKeys.updating.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                  if (updatedSheikhName == sheikhName &&
+                                      updatedSheikhNumber == sheikhPhone &&
+                                      updatedUserEmail == email &&
+                                      updatedArea == area &&
+                                      updatedMosque == mosque) {
+                                    showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            content: Text(
+                                              TKeys.updateError
+                                                  .translate(context),
+                                              style: const TextStyle(
+                                                color: Colors.red,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          );
+                                        });
+                                  }
+                                  else {
+                                    if ((updatedSheikhName != sheikhName &&
+                                            updatedSheikhName.isNotEmpty) ||
+                                        (updatedSheikhNumber != sheikhPhone &&
+                                            updatedSheikhNumber.isNotEmpty) ||
+                                        (updatedUserEmail != email &&
+                                            updatedUserEmail.isNotEmpty)) {
+                                      print('before editing user field');
+                                      updateUserData(userName);
+                                    }
+                                    if (updatedArea != area &&
+                                        updatedArea.isNotEmpty) {
+                                      if (updatedMosque != mosque &&
+                                          updatedMosque.isNotEmpty) {
+                                        //case mosque and city updated
+                                        updateMosques(userName, 2);
+                                        updateUserColl(userName, 2);
+                                        updateCitiesAndMosques();
+                                      } else {
+                                        //case only city is updated
+                                        updateMosques(userName, 1);
+                                        updateUserColl(userName, 1);
+                                        updateCitiesAndMosques();
                                       }
                                     }
-                                  } else {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                              TKeys.error.translate(context)),
-                                          content: Text(TKeys.updateError
-                                              .translate(context)),
-                                          actions: [
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                Navigator.pop(context, false);
-                                              },
-                                              child: Text(
-                                                  TKeys.ok.translate(context)),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
+                                    else if (updatedMosque != mosque &&
+                                        updatedMosque.isNotEmpty) {
+                                      //case only mosque is updated
+                                      updateMosques(userName, 0);
+                                      updateUserColl(userName, 0);
+                                      updateCitiesAndMosques();
+                                    }
+                                    setState(() {
+                                      getUserFields(userName);
+                                    });
+                                    Navigator.pop(context);
+                                    Navigator.pop(context);
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -1080,7 +787,9 @@ class _AccountEditState extends State<AccountEdit> {
                                 label: Text(
                                   TKeys.update.translate(context),
                                   style: const TextStyle(
-                                      color: Colors.white, fontSize: 24),
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                  ),
                                 ),
                               ),
                             ),

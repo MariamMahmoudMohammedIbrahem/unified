@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:azan/register/resetPassword.dart';
+import 'package:azan/password_reset/reset_password.dart';
 import 'package:azan/register/signup.dart';
 import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

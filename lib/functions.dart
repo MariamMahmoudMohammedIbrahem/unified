@@ -1,18 +1,17 @@
-import 'dart:typed_data';
-
-import 'package:azan/t_key.dart';
+import 'package:azan/classes/auto_login.dart';
+import 'package:azan/register/login.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:location/location.dart';
 
 import 'package:intl/intl.dart';
 import 'package:ntp/ntp.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'account/edit_details.dart';
+import 'ble/device_list.dart';
 import 'constants.dart';
 
 Future<String> getCurrentDateTime() async {
@@ -217,8 +216,8 @@ Future<void> getUserFields(String userId) async {
       }
     }
   }
-  QuerySnapshot userSubcollection = await firestore.collection('users').doc(userId).collection('Cities').get();
-  userMosquesIDs = userSubcollection.docs.map((doc) => doc.id).toList();
+  QuerySnapshot userSubCollection = await firestore.collection('users').doc(userId).collection('Cities').get();
+  userMosquesIDs = userSubCollection.docs.map((doc) => doc.id).toList();
   for(String id in userMosquesIDs){
     DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).collection('Cities').doc(id).get();
     if (userSnapshot.exists) {
@@ -266,20 +265,6 @@ void showToastMessage() {
     );
   // }
 }
-/*// Storing credentials
-Future<void> storeCredentials(String email, String password) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setString('email', email);
-  prefs.setString('password', password);
-}
-
-// Retrieving credentials
-Future<Map<String, String>> getStoredCredentials() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? email = prefs.getString('email');
-  String? password = prefs.getString('password');
-  return {'email': email ?? '', 'password': password ?? ''};
-}*/
 //getting the name of the city based on longitude and latitude
 Future<String> getCityName() async{
   final querySnapshot = await FirebaseFirestore.instance.collection('Cities').where('longitude', isEqualTo: '$unitLongitude').where('latitude', isEqualTo: '$unitLatitude').get();
@@ -318,6 +303,7 @@ void resetDateSubscription(int dataType) {
       break;
   }
 }
+
 //initialize the subscription before getting the data from the unit
 Stream<List<int>> createSubscription(String deviceId) {
   return ble
@@ -335,6 +321,7 @@ Stream<List<int>> createSubscription(String deviceId) {
     return List<int>.from(event);
   });
 }
+
 //pause and complete the subscriptions, filter and reformat the received data
 void subscribeCharacteristic(int dataType, String deviceId) {
   Stream<List<int>> stream;
@@ -427,6 +414,7 @@ void subscribeCharacteristic(int dataType, String deviceId) {
       break;
   }
 }
+
 // each time the user gets/reloads the data from the unit save the received data
 Future<void> saveInFirebase(userName) async {
   try {
@@ -453,6 +441,7 @@ Future<void> saveInFirebase(userName) async {
     print(e);
   }
 }
+
 // incase there is setting to date/location/zone/restart/test save the data needed for this action
 Future<void> saveSettingData(int dataType, String userName) async{
   String docId = '$setDay-$setMonth-$setYear-$formattedTime';
@@ -541,3 +530,189 @@ Future<void> saveSettingData(int dataType, String userName) async{
       break;
   }
 }
+
+//******************************************edit_details Page*******************************************//
+
+//update user's personal data in users collection
+Future<void> updateUserData(String name) async {
+  //update users fields (case: name is updated) in users collection
+  try{
+    var data = await firestore.collection('users').doc(name).get();
+    if(data.exists){
+      //update the data edited i users collection
+      print('inside editing user field');
+      try{
+        firestore.collection('users').doc(name).update({
+          'sheikh name': updatedSheikhName,
+          'sheikh phone': updatedSheikhNumber,
+          'user email': updatedUserEmail,
+          'current date': formattedDate,
+          'current time': formattedTime,
+          'note': 'edited data',
+        });
+      }
+      //error while updating the data
+      on FirebaseException catch (e){
+        print('error1 $e');
+      }
+    }
+  }
+  //error while getting the data
+  on FirebaseException catch (e){
+    print('error2 $e');
+  }
+}
+
+//update mosques data in Mosques collection
+Future<void> updateMosques(String name, int dataType) async {
+  //get the id in which the data before editing is saved
+  final printingData = await FirebaseFirestore.instance.collection('Mosques')
+      .where('mosque', isEqualTo: mosque).where('city', isEqualTo: area)
+      .get();
+  //reset sheikh name in previous mosque
+  if (printingData.docs.isNotEmpty) {
+    try {
+      DocumentReference docRef = FirebaseFirestore.instance.collection(
+          'Mosques').doc(printingData.docs.first.id);
+      await docRef.update({
+        'sheikh name': '',
+        'connect time': '$formattedTime - $formattedDate',
+      });
+    } catch (e) {
+      print('got a problem $e');
+    }
+  }
+  //check if updated mosque exists in area
+  final inDatabase = await FirebaseFirestore.instance.collection('Mosques').where('mosque', isEqualTo: updatedMosque).where('city', isEqualTo: updatedArea).get();
+  //if the mosque is found update sheikh name
+  if (inDatabase.docs.isNotEmpty) {
+    DocumentReference docRef = FirebaseFirestore.instance.collection('Mosques').doc(inDatabase.docs.first.id);
+    switch (dataType) {
+    //mosque updated, city not updated
+      case 0:
+        try {
+          await docRef.update({
+            'mosque': updatedMosque,
+            'sheikh name': updatedSheikhName,
+            'connect time': '$formattedTime - $formattedDate',
+          });
+        } catch (e) {
+          print('got a problem $e');
+        }
+        break;
+    //mosque not updated, city updated
+      case 1:
+        try {
+          await docRef.update({
+            'city': updatedArea,
+            'sheikh name': updatedSheikhName,
+            'connect time': '$formattedTime - $formattedDate',
+          });
+        } catch (e) {
+          print('got a problem $e');
+        }
+        break;
+    //mosque updated, city updated
+      case 2:
+        try {
+          await docRef.update({
+            'city': area,
+            'connect time': '$formattedTime - $formattedDate',
+            'mosque': updatedMosque,
+            'sheikh name': updatedSheikhName,
+          });
+        } catch (e) {
+          print('got a problem $e');
+        }
+        break;
+    }
+  }
+  //else if the new mosque isn't found create new document with the city and mosque and sheikh name
+  else {
+    FirebaseFirestore.instance.collection('Mosques').add({
+      'city': area,
+      'connect time': '$formattedTime - $formattedDate',
+      'mosque': updatedMosque,
+      'sheikh name': updatedSheikhName,
+    });
+  }
+}
+
+//update user data in users -> Cities
+Future<void> updateUserColl(String name, int dataType) async{
+  late Map<String, dynamic> data;
+  //check which datatype is passed to the function
+  if(dataType != 0){
+    //get the name of the city stored inside the users collection
+    QuerySnapshot cityDocId = await firestore.collection('users').doc(name).collection('Cities').get();
+    //check if there is city stored in Cities in users
+    if(cityDocId.docs.isNotEmpty){
+      // get the data
+      DocumentSnapshot currentDocSnapshot = await firestore.collection('users').doc(name).collection('Cities').doc(cityDocId.docs.first.id).get();
+      await firestore.collection('users').doc(name).collection('Cities').doc(cityDocId.docs.first.id).delete();
+      // reformat the data
+      data = currentDocSnapshot.data() as Map<String, dynamic>;
+    }
+  }
+  switch(dataType){
+    case 0:
+      firestore.collection('users').doc(name).collection('Cities').doc(area).update(
+          {
+            'mosque': updatedMosque,
+            'current date': formattedDate,
+            'current time': formattedTime,
+          });
+      break;
+    case 1:
+      firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).set(data);
+      firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).update(
+          {
+            'longitude': '',
+            'latitude': '',
+            'current date': formattedDate,
+            'current time': formattedTime,
+          });
+      break;
+    case 2:
+      firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).set(data);
+      firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).update(
+          {
+            'longitude': '',
+            'latitude': '',
+            'mosque': updatedMosque,
+            'current date': formattedDate,
+            'current time': formattedTime,
+          });
+      break;
+  }
+}
+
+//update city and mosque in Cities collection
+Future<void> updateCitiesAndMosques()async {
+  //reset the sheikh name in the previous area and city
+  firestore.collection('Cities').doc(area).collection('Mosques').doc(mosque).update(
+      {
+        'sheikh name': '',
+      });
+  //check if mosque exists inside the area
+  DocumentSnapshot documentSnapshot = await firestore.collection('Cities').doc(updatedArea).collection('Mosques').doc(updatedMosque).get();
+  //if mosque exist inside the city and both exists in Cities collection update
+  if(documentSnapshot.exists){
+    firestore.collection('Cities').doc(updatedArea).collection('Mosques').doc(updatedMosque).update(
+        {
+          'sheikh name': updatedSheikhName,
+        });
+  }
+  //else set
+  else{
+    firestore.collection('Cities').doc(updatedArea).collection('Mosques').doc(updatedMosque).set(
+        {
+          'sheikh name': updatedSheikhName,
+        });
+  }
+}
+
+void updatePass(){}
+
+//******************************************AUTO LOGIN Page*******************************************//
+

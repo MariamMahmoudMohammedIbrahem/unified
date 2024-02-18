@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:azan/constants.dart';
 import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -19,10 +20,11 @@ class _ResetPasswordState extends State<ResetPassword> {
   bool isEmailVerified = false;
   Timer? _timer;
   void sendVerificationEmail() async {
-    User? user = FirebaseAuth.instance.currentUser;
+    // User? user = FirebaseAuth.instance.currentUser;
 
     try {
-      await user?.sendEmailVerification();
+      // await user?.sendEmailVerification();
+      await auth.sendPasswordResetEmail(email: _email);
       // Verification email sent successfully
       print("Verification email sent!");
     } catch (e) {

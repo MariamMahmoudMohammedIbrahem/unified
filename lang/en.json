@@ -12,6 +12,7 @@
   "error": "Error",
   "loginError": "Failed to login. Please Try Again",
   "ok": "OK",
+  "validator": "Field is Required.",
   "userName": "userName",
   "userNameError": "this username is in use",
   "signUp": "Sign Up  ",

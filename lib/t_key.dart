@@ -18,6 +18,7 @@ enum TKeys{
   error,
   loginError,
   ok,
+  validator,
   //signin
   userName,
   userNameError,

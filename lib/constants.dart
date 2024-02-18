@@ -154,6 +154,7 @@ bool rememberPassword = false;
 // bool showToast = false; // Set your boolean condition here
 //account fields flag
 bool accFlag = false; // didn't get the data yet
-//******************************************Scan And Settings Pages*******************************************//
+//******************************************SCAN AND SETTINGS PAGES*******************************************//
 // final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 final auth = FirebaseAuth.instance;
+String latestLink = 'Unknown';

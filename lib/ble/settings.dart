@@ -6,6 +6,7 @@ import 'package:azan/ble/scan.dart';
 import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:functional_data/functional_data.dart';
 import 'package:provider/provider.dart';
 
@@ -121,151 +122,7 @@ class Setting extends StatefulWidget {
 }
 
 class _SettingState extends State<Setting> {
-  void resetDateSubscription(int dataType) {
-    switch (dataType) {
-      case 1:
-        dateSubscription?.cancel(); // Cancel the existing subscription
-        dateSubscription = null; // Reset dateSubscription to null
-        break;
-      case 2: //edit
-        praySubscription?.cancel();
-        praySubscription = null;
-        break;
-      case 3:
-        locationSubscription?.cancel();
-        locationSubscription = null;
-        break;
-      case 4:
-        zoneSubscription?.cancel();
-        zoneSubscription = null;
-        break;
-    }
-  }
 
-  Stream<List<int>> _createSubscription() {
-    return ble
-        .subscribeToCharacteristic(
-      QualifiedCharacteristic(
-        characteristicId:
-        Uuid.parse("0000ffe1-0000-1000-8000-00805f9b34fb"),
-        serviceId: Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb"),
-        deviceId: widget.viewModel.deviceId,
-      ),
-    )
-        .distinct()
-        .asyncMap((event) async {
-      // You can process event or modify data before updating the list
-      return List<int>.from(event);
-    });
-  }
-
-  void subscribeCharacteristic(int dataType) {
-    Stream<List<int>> stream;
-    // dateSubscription?.pause();
-    // locationSubscription?.pause();
-    // praySubscription?.pause();
-    // zoneSubscription?.pause();
-    switch (dataType) {
-      case 1:
-        dateSubscription?.resume();
-        locationSubscription?.pause();
-        praySubscription?.pause();
-        zoneSubscription?.pause();
-        if (dateSubscription == null) {
-          stream = _createSubscription();
-          dateSubscription = stream.listen((event) {
-            setState(() {
-              print('1$event');
-              if (event.length == 11) {
-                // dateList = List.from(event);
-                year = num.parse(convertToInt(event, 3, 1).toString().padLeft(3, '20'));
-                month = convertToInt(event, 4, 1);
-                day = convertToInt(event, 5, 1);
-                hour = convertToInt(event, 6, 1);
-                minute = convertToInt(event, 7, 1);
-                second = convertToInt(event, 8, 1);
-                list1 = true;
-                awaitingResponse = false;
-              }
-            });
-          });
-        }
-        break;
-      case 2:
-        dateSubscription?.pause();
-        locationSubscription?.pause();
-        praySubscription?.resume();
-        zoneSubscription?.pause();
-        if (praySubscription == null) {
-          stream = _createSubscription();
-          praySubscription = stream.listen((event) {
-            setState(() {
-              print('2$event');
-              if (event.length == 15) {
-                // prayList = List.from(event);
-                fajrHour = convertToInt(event, 3, 1);
-                fajrMinute = convertToInt(event, 4, 1).toString().padLeft(2, '0');
-                duhrHour = convertToInt(event, 5, 1);
-                duhrMinute = convertToInt(event, 6, 1).toString().padLeft(2, '0');
-                asrHour = convertToInt(event, 7, 1);
-                asrMinute = convertToInt(event, 8, 1).toString().padLeft(2, '0');
-                maghrebHour = convertToInt(event, 9, 1);
-                maghrebMinute = convertToInt(event, 10, 1).toString().padLeft(2, '0');
-                ishaHour = convertToInt(event, 11, 1);
-                ishaMinute = convertToInt(event, 12, 1).toString().padLeft(2, '0');
-                list2 = true;
-                awaitingResponse = false;
-              }
-            });
-          });
-        }
-        break;
-      case 3:
-        dateSubscription?.pause();
-        locationSubscription?.resume();
-        praySubscription?.pause();
-        zoneSubscription?.pause();
-        if (locationSubscription == null) {
-          stream = _createSubscription();
-          locationSubscription = stream.listen((event) {
-            setState(() {
-              print('3$event');
-              if (event.length == 13) {
-                unitLatitude = convertToInt(event, 3, 4);
-                unitLongitude = convertToInt(event, 7, 4);
-                getCityName();
-                unitLatitude = unitLatitude/1000000;
-                unitLongitude = unitLongitude/1000000;
-                list3 = true;
-                awaitingResponse = false;
-              }
-            });
-          });
-        }
-        break;
-      case 4:
-        dateSubscription?.pause();
-        locationSubscription?.pause();
-        praySubscription?.pause();
-        zoneSubscription?.resume();
-        if (zoneSubscription == null) {
-          stream = _createSubscription();
-          zoneSubscription = stream.listen((event) {
-            setState(() {
-              print('4$event hi');
-              if (event.length == 6) {
-                // zoneList = List.from(event);
-                zoneAfter = convertToInt(event, 3, 1);
-                list4 = true;
-                awaitingResponse = false;
-                // showToast = false;
-              }
-            });
-          });
-        }
-        break;
-    }
-  }
   void getAllDataAndSubscribe() async {
     List<Map<int, List<int>>> dataSets = [
       {1: getDate},
@@ -284,7 +141,7 @@ class _SettingState extends State<Setting> {
       if (!awaitingResponse) {
         awaitingResponse = true;
         resetDateSubscription(dataType);
-        subscribeCharacteristic(dataType);
+        subscribeCharacteristic(dataType, widget.viewModel.deviceId);
         await widget.writeWithoutResponse(widget.characteristic, dataToWrite);
       } else {
         print('Awaiting response, cannot send another packet yet.');
@@ -293,23 +150,24 @@ class _SettingState extends State<Setting> {
     }
     if (!list1) {
       resetDateSubscription(1);
-      subscribeCharacteristic(1);
+      subscribeCharacteristic(1, widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getDate);
     } else if (!list2) {
       //edit
       resetDateSubscription(2);
-      subscribeCharacteristic(2);
+      subscribeCharacteristic(2, widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getPray);
     } else if (!list3) {
       resetDateSubscription(3);
-      subscribeCharacteristic(3);
+      subscribeCharacteristic(3, widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getLocation);
     } else {
       resetDateSubscription(4);
-      subscribeCharacteristic(4);
+      subscribeCharacteristic(4, widget.viewModel.deviceId);
       await widget.writeWithoutResponse(widget.characteristic, getZone);
     }
   }
+
   Future<void> settingDate() async {
     // composeBlePacket(0x01, [setYear,setMonth,setDay,setHour,setMinute,setSecond],'date');
     List<int> data = [setYear,setMonth,setDay,setHour,setMinute,setSecond];
@@ -327,86 +185,23 @@ class _SettingState extends State<Setting> {
     }
     setDate.add(value);
     setDate.add(endFrame);
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.brown.shade50,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.brown.shade700,),
-            const SizedBox(height: 16.0),
-            Text(TKeys.updating.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
-          ],
-        ),
-      ),
-    );
-    try{
-      widget.subscribeToCharacteristic(widget.characteristic);
-      await widget.writeWithoutResponse(widget.characteristic, setDate);
-      // Listen for incoming data asynchronously
-      responseSubscription = widget
-          .subscribeToCharacteristic(widget.characteristic)
-          .listen((receivedData) async {
-        if (receivedData.length == success.length &&
-            receivedData.every(
-                    (element) => element == success[receivedData.indexOf(element)])) {
-          print('Received expected data, setting date and time');
-          responseSubscription?.cancel();
-          setDateTime = true;
-          disconnectRestart();
-          Navigator.pop(context);
-        }
-        else{
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: Colors.brown.shade50,
-              title: Text(TKeys.error.translate(context)),
-              content: Text(TKeys.locationError.translate(context)),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade600,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-                ),
-              ],
-            ),
-          );
-        }
-      });
-    }
-    catch(e){
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.error.translate(context)),
-          content: Text(TKeys.locationError.translate(context)),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.brown,
-                  backgroundColor: Colors.brown.shade600,
-                  disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-            ),
-          ],
-        ),
-      );
-    }
-
+    widget.subscribeToCharacteristic(widget.characteristic);
+    await widget.writeWithoutResponse(widget.characteristic, setDate);
+    // Listen for incoming data asynchronously
+    responseSubscription = widget
+        .subscribeToCharacteristic(widget.characteristic)
+        .listen((receivedData) async {
+      if (receivedData.length == success.length &&
+          receivedData.every(
+                  (element) => element == success[receivedData.indexOf(element)])) {
+        print('Received expected data, setting date and time');
+        responseSubscription?.cancel();
+        setDateTime = true;
+        periodicTimer?.cancel();
+        hourTimer?.cancel();
+        disconnectRestart();
+      }
+    });
   }
 
   Future<void> disconnectRestart() async {
@@ -432,50 +227,58 @@ class _SettingState extends State<Setting> {
       }
       await widget.writeWithoutResponse(widget.characteristic, restart);
       widget.subscribeToCharacteristic(widget.characteristic);
-      // await Future.delayed(const Duration(seconds: 1));
-      // widget.device.connectable.
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.minute.translate(context)),
-          content: Text(TKeys.restarting.translate(context)),
-          // actions: [
-          //   ElevatedButton(
-          //     onPressed: () {
-          //       Navigator.pop(context);
-          //     },
-          //     style: ElevatedButton.styleFrom(
-          //         foregroundColor: Colors.brown,
-          //         backgroundColor: Colors.brown.shade600,
-          //         disabledForegroundColor: Colors.brown.shade600,
-          //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-          //     child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-          //   ),
-          // ],
-        ),
-      );
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
       // timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
-        if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
-          setState(() {
-            found = false;
-            deviceName = '';
-            restartFlag = true;
-          });
-
-          // Cancel the timer if the condition is met
-          // timer?.cancel();
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ScanningListScreen(
-                userName: widget.userName,
-              ),
+      if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
+        setState(() {
+          found = false;
+          deviceName = '';
+          restartFlag = true;
+          hourTimer?.cancel();
+          periodicTimer?.cancel();
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ScanningListScreen(
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
+      }
+      else{
+        ///show dialog alert that tell to try again
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.brown.shade50,
+            title: Text(TKeys.error.translate(context)),
+            content: Text(TKeys.disconnectHeadline.translate(context)),
+            actions: [
+              ElevatedButton(
+                onPressed: (){
+                  if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
+                    setState(() {
+                      hourTimer?.cancel();
+                      periodicTimer?.cancel();
+                    });
+                    widget.viewModel.disconnect();
+                  }
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
+                },
+                style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.brown,
+                    backgroundColor: Colors.brown.shade600,
+                    disabledForegroundColor: Colors.brown.shade600,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
+              ),
+            ],
+          ),
+        );
+      }
       // });
       // if (widget.viewModel.connectionStatus ==
       //     DeviceConnectionState.disconnected) {
@@ -498,7 +301,7 @@ class _SettingState extends State<Setting> {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.brown.shade50,
           title: Text(TKeys.error.translate(context)),
-          content: Text(TKeys.locationError.translate(context)),
+          content: Text(TKeys.restartError.translate(context)),
           actions: [
             ElevatedButton(
               onPressed: () {
@@ -910,7 +713,18 @@ class _SettingState extends State<Setting> {
                     width: width * .8,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        settingDate();
+                        if(awaitingResponse){
+                          Fluttertoast.showToast(
+                            msg: 'can\'t disconnect while getting data',
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            backgroundColor: Colors.brown.shade700,
+                            textColor: Colors.white,
+                          );
+                        }
+                        else{
+                          settingDate();
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.brown.shade100,

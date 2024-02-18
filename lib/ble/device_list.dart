@@ -216,7 +216,16 @@ class _ScanningState extends State<Scanning> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       getCurrentDateTime();
       setState(() {
-        _startScanning();
+        if(widget.connectionStatus == DeviceConnectionState.connected){
+          for(var device in widget.scannerState.discoveredDevices){
+            if(device.name == 'UNAZANEOIPV4'){
+              widget.deviceConnector.disconnect(device.id);
+            }
+          }
+        }
+        else{
+          _startScanning();
+        }
         getDocumentIDs();
         getUserFields(widget.userName);
       });
@@ -264,7 +273,16 @@ class _ScanningState extends State<Scanning> {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                _startScanning();
+                if(widget.connectionStatus == DeviceConnectionState.connected){
+                  for(var device in widget.scannerState.discoveredDevices){
+                    if(device.name == 'UNAZANEOIPV4'){
+                      widget.deviceConnector.disconnect(device.id);
+                    }
+                  }
+                }
+                else{
+                  _startScanning();
+                }
               },
             ),
             ElevatedButton(
@@ -335,7 +353,16 @@ class _ScanningState extends State<Scanning> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _startScanning();
+                        if(widget.connectionStatus == DeviceConnectionState.connected){
+                          for(var device in widget.scannerState.discoveredDevices){
+                            if(device.name == 'UNAZANEOIPV4'){
+                              widget.deviceConnector.disconnect(device.id);
+                            }
+                          }
+                        }
+                        else{
+                          _startScanning();
+                        }
                       });
                     },
                     style: ElevatedButton.styleFrom(

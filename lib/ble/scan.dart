@@ -9,13 +9,14 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:functional_data/functional_data.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../account/account_details.dart';
 import '../constants.dart';
 import '../feedback/feedback1.dart';
 import '../functions.dart';
 import '../register/login.dart';
-import '../register/resetPassword.dart';
+import '../password_reset/reset_password.dart';
 import 'ble_device_connector.dart';
 import 'ble_device_interactor.dart';
 import 'device_list.dart';
@@ -403,8 +404,11 @@ class _ConnectingState extends State<Connecting> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   signOut() async {
-    widget.viewModel.deviceConnector.disconnect(widget.device.id);
+    await widget.viewModel.deviceConnector.disconnect(widget.device.id);
     await auth.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('email', '');
+    await prefs.setString('password', '');
     Navigator.pushAndRemoveUntil(
         context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
   }
@@ -1170,9 +1174,8 @@ class _NotConnectedState extends State<NotConnected> {
     setState(() {
       skipData(widget.userName);
     });
-    hourTimer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
+    hourTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
       setState(() {
-        print('skip page timer');
         getCurrentDateTime();
       });
     });
@@ -1181,6 +1184,9 @@ class _NotConnectedState extends State<NotConnected> {
 
   signOut() async {
     await auth.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('email', '');
+    await prefs.setString('password', '');
     Navigator.pushAndRemoveUntil(
       context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
   }
