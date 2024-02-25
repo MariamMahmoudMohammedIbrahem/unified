@@ -1,6 +1,6 @@
 {
-  "access": "Access The Access",
-  "authorize": "Authorize the FlutterReactiveBle example app to use Bluetooth and location",
+  "accessLocation": "Access The Location",
+  "accessBluetooth": "Access The Bluetooth",
   "email": "Email",
   "password": "Password",
   "emailError": "This Email isn't Fount",
@@ -65,7 +65,6 @@
   "settingOptions": "Settings Options: ",
   "settingPrayerTimes": "Setting Prayer Times",
   "restart": "Restarting The Unit",
-  "lostConnection": "Lost Connection. Check your bluetooth please.",
   "restarting":"Restarting...",
   "restartError": "Failed to restart. Please Try Again",
   "longitudeLatitude": "Unit Longitude And Latitude: ",

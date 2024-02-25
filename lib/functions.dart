@@ -248,6 +248,11 @@ Future<void> skipData(String userId)async{
             isha = userData['isha'];
             formattedDateUnit = userData['date'];
             formattedTimeUnit = userData['time'];
+            unitLongitude= num.parse(userData['longitude'])*1000000;
+            unitLongitude= unitLongitude.truncate();
+            unitLatitude= num.parse(userData['latitude'])*1000000;
+            unitLatitude = unitLatitude.truncate();
+            getCityName();
           }
         }
       // }
@@ -644,6 +649,8 @@ Future<void> updateUserColl(String name, int dataType) async{
   //check which datatype is passed to the function
   if(dataType != 0){
     //get the name of the city stored inside the users collection
+    storedArea = updatedArea;
+    getLongitude();
     QuerySnapshot cityDocId = await firestore.collection('users').doc(name).collection('Cities').get();
     //check if there is city stored in Cities in users
     if(cityDocId.docs.isNotEmpty){
@@ -667,8 +674,8 @@ Future<void> updateUserColl(String name, int dataType) async{
       firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).set(data);
       firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).update(
           {
-            'longitude': '',
-            'latitude': '',
+            'longitude': storedLongitude,
+            'latitude': storedLatitude,
             'current date': formattedDate,
             'current time': formattedTime,
           });
@@ -677,8 +684,8 @@ Future<void> updateUserColl(String name, int dataType) async{
       firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).set(data);
       firestore.collection('users').doc(name).collection('Cities').doc(updatedArea).update(
           {
-            'longitude': '',
-            'latitude': '',
+            'longitude': storedLongitude,
+            'latitude': storedLatitude,
             'mosque': updatedMosque,
             'current date': formattedDate,
             'current time': formattedTime,

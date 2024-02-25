@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 Timer? periodicTimer;
 Timer? connectionTimer;
@@ -158,3 +159,7 @@ bool accFlag = false; // didn't get the data yet
 // final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 final auth = FirebaseAuth.instance;
 String latestLink = 'Unknown';
+PermissionStatus statusLocation = PermissionStatus.denied;
+PermissionStatus statusBluetoothConnect = PermissionStatus.denied;
+// PermissionStatus statusBluetooth = PermissionStatus.denied;
+PermissionStatus statusBluetoothScan = PermissionStatus.denied;

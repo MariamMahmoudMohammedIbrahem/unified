@@ -4,8 +4,9 @@ import 'localization_service.dart';
 
 enum TKeys{
   //authorize
-  access,
-  authorize,
+  accessLocation,
+  accessBluetooth,
+  // authorize,
   //login
   email,
   password,
@@ -75,7 +76,7 @@ enum TKeys{
   settingOptions,
   settingPrayerTimes,
   restart,
-  lostConnection,
+  // lostConnection,
   restarting,
   restartError,
   //settings

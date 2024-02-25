@@ -59,13 +59,21 @@ class _AccountDetailsState extends State<AccountDetails> {
             ),
           ),
         ),
-          Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: width*.1, vertical: 15),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width*.1, vertical: 15),
+            child: Center(
+              child: RefreshIndicator(
+                onRefresh: () => Future.delayed(const Duration(milliseconds: 10), (){
+                  accFlag = false;
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              AccountDetails(name: widget.name)));
+                }),
+                child: ListView(
+                  // mainAxisAlignment: MainAxisAlignment.center,
+                  // crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(bottom: 20),

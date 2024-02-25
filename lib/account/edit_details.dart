@@ -766,7 +766,7 @@ class _AccountEditState extends State<AccountEdit> {
                                       updateCitiesAndMosques();
                                     }
                                     setState(() {
-                                      getUserFields(userName);
+                                      accFlag = false;
                                     });
                                     Navigator.pop(context);
                                     Navigator.pop(context);

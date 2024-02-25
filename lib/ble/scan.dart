@@ -79,7 +79,7 @@ class DeviceInteractionViewModel extends $DeviceInteractionViewModel {
   final BleDeviceConnector deviceConnector;
   @override
   @CustomEquality(Ignore())
-  final Future<List<DiscoveredService>> Function() discoverServices;
+  final Future<List<Service>> Function() discoverServices;
 
   bool get deviceConnected =>
       connectionStatus == DeviceConnectionState.connected;
@@ -274,6 +274,7 @@ class _ConnectingState extends State<Connecting> {
             hourTimer?.cancel();
             periodicTimer?.cancel();
           });
+          ///TODO: REMOVE FROM INSIDE TIMER
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -879,7 +880,7 @@ class _ConnectingState extends State<Connecting> {
                                 width: 5,
                               ),
                               Text(
-                                '$hour:$minute',
+                                '$hour:$minute:$second',
                                 style: TextStyle(
                                     color: Colors.brown.shade800,
                                     fontSize: 24,
@@ -1518,7 +1519,7 @@ class _NotConnectedState extends State<NotConnected> {
                               width: 5,
                             ),
                             Text(
-                              ishaHour == 00 && ishaMinute == ''?formattedTimeUnit:'$hour:$minute',
+                              ishaHour == 00 && ishaMinute == ''?formattedTimeUnit:'$hour:$minute:$second',
                               style: TextStyle(
                                   color: Colors.brown.shade800,
                                   fontSize: 24,
@@ -1563,7 +1564,7 @@ class _NotConnectedState extends State<NotConnected> {
                   Padding(
                     padding: EdgeInsets.symmetric(
                         horizontal: width * .07, vertical: 10),
-                    child: Text(area,
+                    child: Text(unitArea,
                       style: TextStyle(
                           color: Colors.brown.shade800, fontSize: 25, fontWeight: FontWeight.bold),),
                   ),

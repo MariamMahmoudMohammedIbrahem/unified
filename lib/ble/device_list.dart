@@ -159,6 +159,7 @@ class _ScanningState extends State<Scanning> {
     for (var device in widget.scannerState.discoveredDevices) {
       widget.deviceConnector.connect(device.id);
       subscribeStream = _connectionStatusController.listen((event) {
+        ///TODO: MAKE SURE TO CONNECT BEFORE ENTERING THE PAGE
         print('event $event');
         if(event == ConnectionStatus.connected){
           Navigator.push<void>(

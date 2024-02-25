@@ -72,7 +72,7 @@ class SettingViewModel extends $DeviceInteractionViewModel {
   final BleDeviceConnector deviceConnector;
   @override
   @CustomEquality(Ignore())
-  final Future<List<DiscoveredService>> Function() discoverServices;
+  final Future<List<Service>> Function() discoverServices;
 
   bool get deviceConnected =>
       connectionStatus == DeviceConnectionState.connected;
@@ -476,7 +476,7 @@ class _SettingState extends State<Setting> {
             color: Colors.white,
             size: 35,),
         ),
-        title: Text(TKeys.complain.translate(context),style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 20,),),
+        title: Text(TKeys.settings.translate(context),style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 20,),),
         centerTitle: true,
       ),
       body: Stack(
