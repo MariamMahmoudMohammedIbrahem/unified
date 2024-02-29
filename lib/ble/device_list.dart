@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:azan/ble/scan.dart';
-import 'package:azan/register/login.dart';
 import 'package:azan/t_key.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -74,31 +74,127 @@ class Scanning extends StatefulWidget {
   final VoidCallback stopScan;
   final BleDeviceConnector deviceConnector;
   final String userName;
-  @override
   final DeviceConnectionState connectionStatus;
   @override
   State<Scanning> createState() => _ScanningState();
 }
 
-/*class BleStatusNotifier extends ChangeNotifier {
-  BleStatus? _status;
-
-  BleStatus? get status => _status;
-
-  void updateStatus(BleStatus? newStatus) {
-    _status = newStatus;
-    notifyListeners();
-  }
-}
-
-// In your widget tree, where you provide the BleStatusNotifier:
-final BleStatusNotifier bleStatusNotifier = BleStatusNotifier();*/
 final FlutterReactiveBle _ble = ble;
 class _ScanningState extends State<Scanning> {
+  final Stream<ConnectionStatus> _connectionStatusController = Stream<ConnectionStatus>.value(ConnectionStatus.connected);
+  StreamSubscription<ConnectionStatus>? subscribeStream;
+
+  @override
+  Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    final Size screenSize = MediaQuery.of(context).size;
+    return Scaffold(
+      body: Stack(
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 4),
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('images/pattern.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: width * .07),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  RippleAnimation(
+                    size: screenSize * .5,
+                    minRadius: 100,
+                    repeat: true,
+                    color: Colors.brown.shade400,
+                    ripplesCount: 6,
+                    child: Icon(
+                      Icons.bluetooth_rounded,
+                      size: width * .4,
+                      color: Colors.brown.shade700,
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        if(widget.connectionStatus == DeviceConnectionState.connected){
+                          for(var device in widget.scannerState.discoveredDevices){
+                            if(device.name == 'UNAZANEOIPV4'){
+                              widget.deviceConnector.disconnect(device.id);
+                            }
+                          }
+                        }
+                        else{
+                          _startScanning();
+                        }
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      widget.scannerState.scanIsInProgress
+                          ? TKeys.scanning.translate(context)
+                          : TKeys.scan.translate(context),
+                      style: const TextStyle(color: Colors.white, fontSize: 24),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      //navigate to scan page without scanning
+                      _showAlertDialog();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.brown,
+                      backgroundColor: Colors.brown.shade600,
+                      disabledForegroundColor: Colors.brown.shade600,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      TKeys.skip.translate(context),
+                      style: const TextStyle(color: Colors.white, fontSize: 24),
+                    ),
+                  ),
+                  Visibility(
+                    visible: !widget.scannerState.scanIsInProgress,
+                    child: Text(
+                      found
+                          ? '${TKeys.connect.translate(context)} $deviceName'
+                          : TKeys.notFound.translate(context),
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade800),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _startScanning(){
     if(_ble.status == BleStatus.ready){
       if (!widget.scannerState.scanIsInProgress) {
-        print('here');
+        if (kDebugMode) {
+          print('here');
+        }
         widget.startScan([]);
       }
     }
@@ -114,7 +210,7 @@ class _ScanningState extends State<Scanning> {
       });
     }
 
-}
+  }
 
   void _showBleNotReadyAlertDialog(BuildContext context) {
     showDialog<void>(
@@ -153,14 +249,14 @@ class _ScanningState extends State<Scanning> {
       },
     );
   }
-  Stream<ConnectionStatus> _connectionStatusController = Stream<ConnectionStatus>.value(ConnectionStatus.connected);
-  StreamSubscription<ConnectionStatus>? subscribeStream;
   void connect() {
     for (var device in widget.scannerState.discoveredDevices) {
       widget.deviceConnector.connect(device.id);
       subscribeStream = _connectionStatusController.listen((event) {
         ///TODO: MAKE SURE TO CONNECT BEFORE ENTERING THE PAGE
-        print('event $event');
+        if (kDebugMode) {
+          print('event $event');
+        }
         if(event == ConnectionStatus.connected){
           Navigator.push<void>(
             context,
@@ -312,111 +408,6 @@ class _ScanningState extends State<Scanning> {
           ],
         );
       },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    final Size screenSize = MediaQuery.of(context).size;
-    return Scaffold(
-      body: Stack(
-        children: [
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 4),
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('images/pattern.jpg'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: width * .07),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  RippleAnimation(
-                    size: screenSize * .5,
-                    minRadius: 100,
-                    repeat: true,
-                    color: Colors.brown.shade400,
-                    ripplesCount: 6,
-                    child: Icon(
-                      Icons.bluetooth_rounded,
-                      size: width * .4,
-                      color: Colors.brown.shade700,
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        if(widget.connectionStatus == DeviceConnectionState.connected){
-                          for(var device in widget.scannerState.discoveredDevices){
-                            if(device.name == 'UNAZANEOIPV4'){
-                              widget.deviceConnector.disconnect(device.id);
-                            }
-                          }
-                        }
-                        else{
-                          _startScanning();
-                        }
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade600,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      widget.scannerState.scanIsInProgress
-                          ? TKeys.scanning.translate(context)
-                          : TKeys.scan.translate(context),
-                      style: const TextStyle(color: Colors.white, fontSize: 24),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      //navigate to scan page without scanning
-                      _showAlertDialog();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade600,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      TKeys.skip.translate(context),
-                      style: const TextStyle(color: Colors.white, fontSize: 24),
-                    ),
-                  ),
-                  Visibility(
-                    visible: !widget.scannerState.scanIsInProgress,
-                    child: Text(
-                      found
-                          ? '${TKeys.connect.translate(context)} $deviceName'
-                          : TKeys.notFound.translate(context),
-                      style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red.shade800),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

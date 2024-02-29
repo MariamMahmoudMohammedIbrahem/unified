@@ -1,5 +1,3 @@
-import 'package:azan/classes/auto_login.dart';
-import 'package:azan/functions.dart';
 import 'package:azan/t_key.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,6 +18,7 @@ import 'ble/ble_status_monitor.dart';
 import 'ble/ble_status_screen.dart';
 import 'constants.dart';
 import 'firebase_options.dart';
+import 'login/auto_login.dart';
 
 Future<void> main() async {
   /// widgets binding
@@ -159,18 +158,9 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Consumer2<BleStatus?, PermissionProvider>(
         builder: (_, status, permission, __) {
-          // statusLocation = permissionProvider.locationStatus;
-          // statusCamera = permissionProvider.cameraStatus;
           if (status == BleStatus.ready && permission.bluetoothStatus.isGranted && permission.locationStatus.isGranted) {
             return const AutoLogin();
           }
-          // else if(statusCamera.isDenied){
-          //     print('consumer $statusCamera');
-          //     return const CameraPermission();
-          // }
-          // else if(statusBluetooth.isDenied){
-          //   return const BluetoothPermission();
-          // }
           else if(permission.locationStatus.isDenied){
             permission.requestLocationPermission();
               return const LocationPermission();
@@ -193,26 +183,6 @@ class LocationPermission extends StatefulWidget {
 }
 
 class _LocationPermissionState extends State<LocationPermission> {
-  Future<void> _requestPermission() async {
-    // statusLocation = await Permission.location.status;
-
-    if(statusLocation.isDenied){
-      statusLocation = await Permission.location.request();
-      if(statusLocation.isGranted){
-        setState(() {
-          statusLocation = PermissionStatus.granted;
-        });
-        Fluttertoast.showToast(msg: 'location granted');
-      }
-    }
-  }
-  @override
-  void initState(){
-    super.initState();
-    // Preload images
-    // precacheImage(const AssetImage('images/pattern.jpg'), context);
-    // precacheImage(const AssetImage('images/appIcon.jpg'), context);
-  }
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -226,7 +196,6 @@ class _LocationPermissionState extends State<LocationPermission> {
             width: width,
             child: Image.asset('images/location.png'),
             ),
-            // Text(TKeys.authorize.translate(context)),
             ElevatedButton(
               onPressed: _requestPermission,
               style: ElevatedButton.styleFrom(
@@ -241,6 +210,15 @@ class _LocationPermissionState extends State<LocationPermission> {
       ),
     );
   }
+  Future<void> _requestPermission() async {
+    if(statusLocation.isDenied){
+      statusLocation = await Permission.location.request();
+      if(statusLocation.isGranted){
+        statusLocation = PermissionStatus.granted;
+        Fluttertoast.showToast(msg: 'location granted');
+      }
+    }
+  }
 }
 
 class BluetoothPermission extends StatefulWidget {
@@ -251,23 +229,6 @@ class BluetoothPermission extends StatefulWidget {
 }
 
 class _BluetoothPermissionState extends State<BluetoothPermission> {
-  Future<void> _requestPermission() async {
-
-    if(statusBluetoothConnect.isDenied){
-      statusBluetoothConnect = await Permission.bluetoothConnect.request();
-      if(statusBluetoothConnect.isGranted){
-        setState(() {
-          statusBluetoothConnect = PermissionStatus.granted;
-          Permission.bluetoothScan.request();
-        });
-        Fluttertoast.showToast(msg: 'bluetooth granted');
-      }
-    }
-  }
-  @override
-  void initState(){
-    super.initState();
-  }
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -281,7 +242,6 @@ class _BluetoothPermissionState extends State<BluetoothPermission> {
               width: width,
               child: Image.asset('images/bluetooth.png'),
             ),
-            // Text(TKeys.authorize.translate(context)),
             ElevatedButton(
               onPressed: _requestPermission,
               style: ElevatedButton.styleFrom(
@@ -295,5 +255,16 @@ class _BluetoothPermissionState extends State<BluetoothPermission> {
         ),
       ),
     );
+  }
+  Future<void> _requestPermission() async {
+
+    if(statusBluetoothConnect.isDenied){
+      statusBluetoothConnect = await Permission.bluetoothConnect.request();
+      if(statusBluetoothConnect.isGranted){
+        statusBluetoothConnect = PermissionStatus.granted;
+        Permission.bluetoothScan.request();
+        Fluttertoast.showToast(msg: 'bluetooth granted');
+      }
+    }
   }
 }

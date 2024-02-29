@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:azan/constants.dart';
 import 'package:azan/t_key.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../functions.dart';
 
@@ -14,7 +15,6 @@ class AccountEdit extends StatefulWidget {
   State<AccountEdit> createState() => _AccountEditState();
 }
 
-// var userNameController = TextEditingController();
 var sheikhNameController = TextEditingController();
 var sheikhNumberController = TextEditingController();
 var userEmailController = TextEditingController();
@@ -28,33 +28,9 @@ String updatedArea = '';
 String updatedMosque = '';
 
 class _AccountEditState extends State<AccountEdit> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    userName = widget.name;
-    updatedSheikhName = sheikhName;
-    updatedSheikhNumber = sheikhPhone;
-    updatedUserEmail = email;
-    updatedArea = storedArea;
-    updatedMosque = mosque;
-    // userNameController = TextEditingController(text: widget.name);
-    sheikhNameController = TextEditingController(text: sheikhName);
-    sheikhNumberController = TextEditingController(text: sheikhPhone);
-    userEmailController = TextEditingController(text: email);
-    // mosqueController =
-    //     TextEditingController(text: mosque);
-    // areaController =
-    //     TextEditingController(text: area);
-    // getDocumentIDs();
-    getMosquesList(storedArea);
-  }
-
-  @override
-  void dispose() {
-    // userConfirm = false;
-    super.dispose();
-  }
+  final _formKey = GlobalKey<FormState>();
+  final _formKey1 = GlobalKey<FormState>();
+  final _formKey2 = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +47,7 @@ class _AccountEditState extends State<AccountEdit> {
             //     .popUntil(ModalRoute.withName("/Page1"));
             // userConfirm = false;
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
             size: 35,
@@ -79,7 +55,7 @@ class _AccountEditState extends State<AccountEdit> {
         ),
         title: Text(
           TKeys.editProfile.translate(context),
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -136,210 +112,178 @@ class _AccountEditState extends State<AccountEdit> {
                             ],
                           ),
                           // sheikh name
-                          Text(
-                            TKeys.sheikhName.translate(context),
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.brown.shade700,
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                EdgeInsets.only(left: width * .05, bottom: 10),
-                            child: Container(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              decoration: BoxDecoration(
-                                  color: Colors.brown.shade800.withOpacity(0.7),
-                                  borderRadius: BorderRadius.circular(20.0)),
-                              child: TextFormField(
-                                controller: sheikhNameController,
-                                cursorColor: Colors.brown,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty)
-                                    return TKeys.validator.translate(context);
-                                  return null;
-                                },
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                  ),
-                                  // hintText: 'Sheikh Name',
-                                  floatingLabelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade900;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  labelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade800;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  border: const UnderlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(20.0)),
-                                    borderSide: BorderSide(
-                                        width: 1, color: Colors.black),
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  TKeys.sheikhName.translate(context),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.brown.shade700,
                                   ),
                                 ),
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                onChanged: (value) async {
-                                  setState(() {
-                                    updatedSheikhName = value;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                          //sheikh number
-                          Text(
-                            TKeys.phone.translate(context),
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.brown.shade700,
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                EdgeInsets.only(left: width * .05, bottom: 10),
-                            child: Container(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              decoration: BoxDecoration(
-                                  color: Colors.brown.shade800.withOpacity(0.7),
-                                  borderRadius: BorderRadius.circular(20.0)),
-                              child: TextFormField(
-                                controller: sheikhNumberController,
-                                cursorColor: Colors.brown,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty)
-                                    return TKeys.validator.translate(context);
-                                  return null;
-                                },
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(
-                                    Icons.phone,
-                                    color: Colors.white,
-                                  ),
-                                  // hintText: 'Sheikh Number',
-                                  floatingLabelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade900;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  labelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade800;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  border: const UnderlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(20.0)),
-                                    borderSide: BorderSide(
-                                        width: 1, color: Colors.black),
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(left: width * .05, bottom: 10),
+                                  child: Container(
+                                    padding: const EdgeInsets.only(left: 15.0),
+                                    decoration: BoxDecoration(
+                                        color: Colors.brown.shade800.withOpacity(0.7),
+                                        borderRadius: BorderRadius.circular(20.0)),
+                                    child: TextFormField(
+                                      controller: sheikhNameController,
+                                      cursorColor: Colors.white,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'name is required';
+                                        } else if (value.length < 3) {
+                                          return 'name must be at least 3 characters long';
+                                        } else if (!isUsernameValid(value)) {
+                                          return 'Enter a valid name \n (only letters, numbers, and underscores are allowed)';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: const InputDecoration(
+                                        prefixIcon: Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                        ),
+                                        errorStyle: TextStyle(color: Colors.white),
+                                        border: UnderlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.all(Radius.circular(20.0)),
+                                          borderSide: BorderSide(
+                                              width: 1, color: Colors.black),
+                                        ),
+                                      ),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold),
+                                      onChanged: (value) async {
+                                        setState(() {
+                                          updatedSheikhName = value;
+                                        });
+                                      },
+                                    ),
                                   ),
                                 ),
-                                style: const TextStyle(
-                                    color: Colors.white,
+                                //sheikh number
+                                Text(
+                                  TKeys.phone.translate(context),
+                                  style: TextStyle(
                                     fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                onChanged: (value) async {
-                                  setState(() {
-                                    updatedSheikhNumber = value;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                          //email
-                          Text(
-                            TKeys.email.translate(context),
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.brown.shade700,
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                EdgeInsets.only(left: width * .05, bottom: 10),
-                            child: Container(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              decoration: BoxDecoration(
-                                  color: Colors.brown.shade800.withOpacity(0.7),
-                                  borderRadius: BorderRadius.circular(20.0)),
-                              child: TextFormField(
-                                controller: userEmailController,
-                                cursorColor: Colors.brown,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty)
-                                    return TKeys.validator.translate(context);
-                                  return null;
-                                },
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(
-                                    Icons.email_outlined,
-                                    color: Colors.white,
-                                  ),
-                                  // hintText: 'Email',
-                                  floatingLabelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade900;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  labelStyle:
-                                      MaterialStateTextStyle.resolveWith(
-                                          (Set<MaterialState> states) {
-                                    final Color color = states
-                                            .contains(MaterialState.error)
-                                        ? Theme.of(context).colorScheme.error
-                                        : Colors.brown.shade800;
-                                    return TextStyle(
-                                        color: color, letterSpacing: 1.3);
-                                  }),
-                                  border: const UnderlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(20.0)),
-                                    borderSide: BorderSide(
-                                        width: 1, color: Colors.black),
+                                    color: Colors.brown.shade700,
                                   ),
                                 ),
-                                style: const TextStyle(
-                                    color: Colors.white,
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(left: width * .05, bottom: 10),
+                                  child: Container(
+                                    padding: const EdgeInsets.only(left: 15.0),
+                                    decoration: BoxDecoration(
+                                        color: Colors.brown.shade800.withOpacity(0.7),
+                                        borderRadius: BorderRadius.circular(20.0)),
+                                    child: TextFormField(
+                                      controller: sheikhNumberController,
+                                      cursorColor: Colors.white,
+                                      keyboardType: TextInputType
+                                          .phone, // Set keyboard type for phone number
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter
+                                            .digitsOnly, // Allow only digits
+                                        LengthLimitingTextInputFormatter(
+                                            11), // Limit the length to 10 digits
+                                      ],
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'phone number is required';
+                                        } else if (!isPhoneValid(value)) {
+                                          return 'Enter a valid phone number';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: const InputDecoration(
+                                        prefixIcon: Icon(
+                                          Icons.phone,
+                                          color: Colors.white,
+                                        ),
+                                        errorStyle: TextStyle(color: Colors.white),
+                                        border: UnderlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.all(Radius.circular(20.0)),
+                                          borderSide: BorderSide(
+                                              width: 1, color: Colors.black),
+                                        ),
+                                      ),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold),
+                                      onChanged: (value) async {
+                                        setState(() {
+                                          updatedSheikhNumber = value;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                //email
+                                Text(
+                                  TKeys.email.translate(context),
+                                  style: TextStyle(
                                     fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                onChanged: (value) async {
-                                  setState(() {
-                                    updatedUserEmail = value;
-                                  });
-                                },
-                              ),
+                                    color: Colors.brown.shade700,
+                                  ),
+                                ),
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(left: width * .05, bottom: 10),
+                                  child: Container(
+                                    padding: const EdgeInsets.only(left: 15.0),
+                                    decoration: BoxDecoration(
+                                        color: Colors.brown.shade800.withOpacity(0.7),
+                                        borderRadius: BorderRadius.circular(20.0)),
+                                    child: TextFormField(
+                                      controller: userEmailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      cursorColor: Colors.white,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Email is required';
+                                        } else if (!isEmailValid(value)) {
+                                          return 'Enter a valid email address';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: const InputDecoration(
+                                        prefixIcon: Icon(
+                                          Icons.email_outlined,
+                                          color: Colors.white,
+                                        ),
+                                        errorStyle: TextStyle(color: Colors.white),
+                                        border: UnderlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.all(Radius.circular(20.0)),
+                                          borderSide: BorderSide(
+                                              width: 1, color: Colors.black),
+                                        ),
+                                      ),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold),
+                                      onChanged: (value) async {
+                                        setState(() {
+                                          updatedUserEmail = value;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           //area
@@ -458,61 +402,46 @@ class _AccountEditState extends State<AccountEdit> {
                                     color:
                                         Colors.brown.shade800.withOpacity(0.7),
                                     borderRadius: BorderRadius.circular(20.0)),
-                                child: TextFormField(
-                                  controller: areaController,
-                                  cursorColor: Colors.brown,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty)
-                                      return TKeys.validator.translate(context);
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    prefixIcon: const Icon(
-                                      Icons.area_chart_outlined,
-                                      color: Colors.white,
+                                child: Form(
+                                  key: _formKey1,
+                                  child: TextFormField(
+                                    controller: areaController,
+                                    cursorColor: Colors.white,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'area is required';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.area_chart_outlined,
+                                        color: Colors.white,
+                                      ),
+                                      label: Text(
+                                        TKeys.area.translate(context),
+                                        style:
+                                            const TextStyle(color: Colors.white),
+                                      ),
+                                      errorStyle: const TextStyle(color: Colors.white),
+                                      border: const UnderlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(20.0)),
+                                        borderSide: BorderSide(
+                                            width: 1, color: Colors.brown),
+                                      ),
                                     ),
-                                    label: Text(
-                                      TKeys.area.translate(context),
-                                      style:
-                                          const TextStyle(color: Colors.white),
-                                    ),
-                                    floatingLabelStyle:
-                                        MaterialStateTextStyle.resolveWith(
-                                            (Set<MaterialState> states) {
-                                      final Color color = states
-                                              .contains(MaterialState.error)
-                                          ? Theme.of(context).colorScheme.error
-                                          : Colors.brown.shade900;
-                                      return TextStyle(
-                                          color: color, letterSpacing: 1.3);
-                                    }),
-                                    labelStyle:
-                                        MaterialStateTextStyle.resolveWith(
-                                            (Set<MaterialState> states) {
-                                      final Color color = states
-                                              .contains(MaterialState.error)
-                                          ? Theme.of(context).colorScheme.error
-                                          : Colors.brown.shade800;
-                                      return TextStyle(
-                                          color: color, letterSpacing: 1.3);
-                                    }),
-                                    border: const UnderlineInputBorder(
-                                      borderRadius: BorderRadius.all(
-                                          Radius.circular(20.0)),
-                                      borderSide: BorderSide(
-                                          width: 1, color: Colors.brown),
-                                    ),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        updatedArea = value;
+                                        getMosquesList(value);
+                                      });
+                                    },
                                   ),
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      updatedArea = value;
-                                      getMosquesList(value);
-                                    });
-                                  },
                                 ),
                               ),
                             ),
@@ -631,61 +560,45 @@ class _AccountEditState extends State<AccountEdit> {
                                     color:
                                         Colors.brown.shade800.withOpacity(0.7),
                                     borderRadius: BorderRadius.circular(20.0)),
-                                child: TextFormField(
-                                  controller: mosqueController,
-                                  cursorColor: Colors.brown,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return TKeys.validator.translate(context);
-                                    }
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    prefixIcon: const Icon(
-                                      Icons.mosque_outlined,
-                                      color: Colors.white,
+                                child: Form(
+                                  key: _formKey2,
+                                  child: TextFormField(
+                                    controller: mosqueController,
+                                    cursorColor: Colors.white,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'mosque is required';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.mosque_outlined,
+                                        color: Colors.white,
+                                      ),
+                                      label: Text(
+                                        TKeys.mosque.translate(context),
+                                        style:
+                                            const TextStyle(color: Colors.white),
+                                      ),
+                                      errorStyle: const TextStyle(color: Colors.white),
+                                      border: const UnderlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(20.0)),
+                                        borderSide: BorderSide(
+                                            width: 1, color: Colors.brown),
+                                      ),
                                     ),
-                                    label: Text(
-                                      TKeys.mosque.translate(context),
-                                      style:
-                                          const TextStyle(color: Colors.white),
-                                    ),
-                                    floatingLabelStyle:
-                                        MaterialStateTextStyle.resolveWith(
-                                            (Set<MaterialState> states) {
-                                      final Color color = states
-                                              .contains(MaterialState.error)
-                                          ? Theme.of(context).colorScheme.error
-                                          : Colors.brown.shade900;
-                                      return TextStyle(
-                                          color: color, letterSpacing: 1.3);
-                                    }),
-                                    labelStyle:
-                                        MaterialStateTextStyle.resolveWith(
-                                            (Set<MaterialState> states) {
-                                      final Color color = states
-                                              .contains(MaterialState.error)
-                                          ? Theme.of(context).colorScheme.error
-                                          : Colors.brown.shade800;
-                                      return TextStyle(
-                                          color: color, letterSpacing: 1.3);
-                                    }),
-                                    border: const UnderlineInputBorder(
-                                      borderRadius: BorderRadius.all(
-                                          Radius.circular(20.0)),
-                                      borderSide: BorderSide(
-                                          width: 1, color: Colors.brown),
-                                    ),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        updatedMosque = value;
+                                      });
+                                    },
                                   ),
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      updatedMosque = value;
-                                    });
-                                  },
                                 ),
                               ),
                             ),
@@ -697,21 +610,6 @@ class _AccountEditState extends State<AccountEdit> {
                               width: width * .8,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (context) => AlertDialog(
-                                      backgroundColor: Colors.brown.shade50,
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          CircularProgressIndicator(color: Colors.brown.shade700,),
-                                          const SizedBox(height: 16.0),
-                                          Text(TKeys.updating.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
-                                        ],
-                                      ),
-                                    ),
-                                  );
                                   if (updatedSheikhName == sheikhName &&
                                       updatedSheikhNumber == sheikhPhone &&
                                       updatedUserEmail == email &&
@@ -734,42 +632,32 @@ class _AccountEditState extends State<AccountEdit> {
                                         });
                                   }
                                   else {
-                                    if ((updatedSheikhName != sheikhName &&
-                                            updatedSheikhName.isNotEmpty) ||
-                                        (updatedSheikhNumber != sheikhPhone &&
-                                            updatedSheikhNumber.isNotEmpty) ||
-                                        (updatedUserEmail != email &&
-                                            updatedUserEmail.isNotEmpty)) {
-                                      print('before editing user field');
-                                      updateUserData(userName);
-                                    }
-                                    if (updatedArea != area &&
-                                        updatedArea.isNotEmpty) {
-                                      if (updatedMosque != mosque &&
-                                          updatedMosque.isNotEmpty) {
-                                        //case mosque and city updated
-                                        updateMosques(userName, 2);
-                                        updateUserColl(userName, 2);
-                                        updateCitiesAndMosques();
-                                      } else {
-                                        //case only city is updated
-                                        updateMosques(userName, 1);
-                                        updateUserColl(userName, 1);
-                                        updateCitiesAndMosques();
+                                    if(_formKey.currentState!.validate() && (area.isNotEmpty || areaOther) && (mosque.isNotEmpty || mosqueOther)){
+                                      if(areaOther && mosqueOther){
+                                        if (_formKey1.currentState!.validate() &&
+                                            _formKey2.currentState!.validate()) {
+                                          validate();
+                                        }
+                                      }
+                                      else if(areaOther){
+                                        if (_formKey1.currentState!.validate()) {
+                                          validate();
+                                        }
+                                      }
+                                      else if (mosqueOther){
+                                        if (_formKey2.currentState!.validate()) {
+                                          validate();
+                                        }
+                                      }
+                                      else{
+                                        validate();
                                       }
                                     }
-                                    else if (updatedMosque != mosque &&
-                                        updatedMosque.isNotEmpty) {
-                                      //case only mosque is updated
-                                      updateMosques(userName, 0);
-                                      updateUserColl(userName, 0);
-                                      updateCitiesAndMosques();
+                                    else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Please fill input')),
+                                      );
                                     }
-                                    setState(() {
-                                      accFlag = false;
-                                    });
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -803,5 +691,78 @@ class _AccountEditState extends State<AccountEdit> {
         ],
       ),
     );
+  }
+  @override
+  void initState() {
+    super.initState();
+    userName = widget.name;
+    updatedSheikhName = sheikhName;
+    updatedSheikhNumber = sheikhPhone;
+    updatedUserEmail = email;
+    updatedArea = storedArea;
+    updatedMosque = mosque;
+    sheikhNameController = TextEditingController(text: sheikhName);
+    sheikhNumberController = TextEditingController(text: sheikhPhone);
+    userEmailController = TextEditingController(text: email);
+    getMosquesList(storedArea);
+  }
+  void validate(){
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+              color: Colors.brown.shade700,
+            ),
+            const SizedBox(height: 16.0),
+            Text(
+              TKeys.updating.translate(context),
+              style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.brown.shade700),
+            ),
+          ],
+        ),
+      ),
+    );
+    if ((updatedSheikhName != sheikhName &&
+        updatedSheikhName.isNotEmpty) ||
+        (updatedSheikhNumber != sheikhPhone &&
+            updatedSheikhNumber.isNotEmpty) ||
+        (updatedUserEmail != email &&
+            updatedUserEmail.isNotEmpty)) {
+      updateUserData(userName);
+    }
+    if (updatedArea != area &&
+        updatedArea.isNotEmpty) {
+      if (updatedMosque != mosque &&
+          updatedMosque.isNotEmpty) {
+        //case mosque and city updated
+        updateMosques(userName, 2);
+        updateUserColl(userName, 2);
+        updateCitiesAndMosques();
+      } else {
+        //case only city is updated
+        updateMosques(userName, 1);
+        updateUserColl(userName, 1);
+        updateCitiesAndMosques();
+      }
+    }
+    else if (updatedMosque != mosque &&
+        updatedMosque.isNotEmpty) {
+      //case only mosque is updated
+      updateMosques(userName, 0);
+      updateUserColl(userName, 0);
+      updateCitiesAndMosques();
+    }
+    setState(() {
+      accFlag = false;
+    });
+    Navigator.pop(context);
+    Navigator.pop(context);
   }
 }

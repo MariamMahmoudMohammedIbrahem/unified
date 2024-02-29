@@ -33,11 +33,11 @@ abstract class $ScanningList {
   ScanningList copyUsing(
       void Function(DeviceList$Change change) mutator) {
     final change = DeviceList$Change._(
-      this.deviceId,
+      deviceId,
       // this.connectableStatus,
       // this.connectionStatus,
-      this.deviceConnector,
-      this.discoverServices,
+      deviceConnector,
+      discoverServices,
     );
     mutator(change);
     return ScanningList(

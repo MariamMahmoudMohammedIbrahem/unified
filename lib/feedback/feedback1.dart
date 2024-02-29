@@ -1,6 +1,7 @@
 import 'package:azan/constants.dart';
 import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class FeedbackRegister extends StatefulWidget {
@@ -15,8 +16,6 @@ class FeedbackRegister extends StatefulWidget {
 }
 
 class _FeedbackRegisterState extends State<FeedbackRegister> {
-  final controllerName = TextEditingController();
-  final controllerArea = TextEditingController();
   final controllerNote = TextEditingController();
   late String selectedOption = '';
   late String msg = '';
@@ -164,6 +163,7 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                 ),
                 TextFormField(
                   controller: controllerNote,
+                  cursorColor: Colors.brown.shade700,
                   decoration: InputDecoration(
                     floatingLabelStyle: MaterialStateTextStyle.resolveWith(
                         (Set<MaterialState> states) {
@@ -200,12 +200,12 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                   child: SizedBox(
                     width: width * .8,
                     child: ElevatedButton(
-                      onPressed: () async {
+                      onPressed: () {
                         try {
                           if(selectedOption.isNotEmpty){
-                            await FirebaseFirestore.instance
+                            FirebaseFirestore.instance
                                 .collection('users')
-                                .doc('${widget.name}')
+                                .doc(widget.name)
                                 .collection('feedback').doc('$setDay-$setMonth-$setYear-$formattedTime')
                                 .set({
                               'problem': selectedOption,
@@ -216,30 +216,17 @@ class _FeedbackRegisterState extends State<FeedbackRegister> {
                               'latitude of mobile':storedLatitude,
                               'longitude of unit':unitLongitude,
                               'latitude of unit':unitLatitude,
-                            });
-                            Navigator.pop(context,true);
+                            }).then((value) => Navigator.pop(context,true));
                           }
                           else{
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text(TKeys.error.translate(context)),
-                                  content: Text(TKeys.submitError.translate(context)),
-                                  actions: [
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context, false);
-                                      },
-                                      child: Text(TKeys.ok.translate(context)),
-                                    ),
-                                  ],
-                                );
-                              },
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please fill input')),
                             );
                           }
                         } catch (error) {
-                          print(error);
+                          if (kDebugMode) {
+                            print(error);
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(

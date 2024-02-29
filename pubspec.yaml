@@ -77,6 +77,9 @@ dependencies:
   uni_links: ^0.5.1
   mailer: ^6.1.0
 
+  ##bleLogger
+  intl: ^0.18.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

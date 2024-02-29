@@ -1,11 +1,10 @@
 import 'dart:ui';
 
-import 'package:azan/register/login.dart';
+import 'package:azan/login/login.dart';
 import 'package:azan/register/register.dart';
 import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../constants.dart';
 import '../functions.dart';
@@ -21,15 +20,12 @@ class _SignUpState extends State<SignUp> {
   final emailController = TextEditingController();
   final userController = TextEditingController();
   final passwordController = TextEditingController();
-  final _auth = FirebaseAuth.instance;
   late String email;
-  late String userName = '';
+  String userName = '';
   late String password;
-  void initState() {
-    super.initState();
-    getDocumentIDs();
-  }
+  final _formKey = GlobalKey<FormState>();
 
+  @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     return Scaffold(
@@ -69,178 +65,208 @@ class _SignUpState extends State<SignUp> {
                           ),
                         )),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10.0),
-                    child: TextFormField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.email, color: Colors.brown.shade700,),
-                        labelText: TKeys.email.translate(context),
-                        floatingLabelStyle: MaterialStateTextStyle.resolveWith(
-                                (Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade700;
-                              return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
-                            }),
-                        labelStyle: MaterialStateTextStyle.resolveWith(
-                                (Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade700;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                          borderSide: BorderSide(width: 3, color: Colors.brown.shade800 ,),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(left: width * .05, bottom: 10),
+                          child: Container(
+                            padding: const EdgeInsets.only(left: 15.0),
+                            decoration: BoxDecoration(
+                                color: Colors.brown.shade600.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(20.0)),
+                            child: TextFormField(
+                              controller: emailController,
+                              cursorColor: Colors.white,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Email is required';
+                                } else if (!isEmailValid(value)) {
+                                  return 'Enter a valid email address';
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.email, color: Colors.white,),
+                                label: Text(
+                                  TKeys.email.translate(context),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide:
+                                  BorderSide(color: Colors.white, width: 1.0),
+                                ),
+                                border: const UnderlineInputBorder(
+                                  borderRadius:
+                                  BorderRadius.all(Radius.circular(20.0)),
+                                  borderSide:
+                                  BorderSide(width: 1, color: Colors.white),
+                                ),
+                              ),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold),
+                              onChanged:(value){
+                                setState(() {
+                                  email = value;
+                                });
+                              },
+                            ),
+                          ),
                         ),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                          borderSide: BorderSide(width: 1, color: Colors.brown ,),
+                        Padding(
+                          padding: EdgeInsets.only(left: width * .05, bottom: 10),
+                          child: Container(
+                            padding: const EdgeInsets.only(left: 15.0),
+                            decoration: BoxDecoration(
+                                color: Colors.brown.shade600.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(20.0)),
+                            child: TextFormField(
+                              controller: userController,
+                              cursorColor: Colors.white,
+                              keyboardType: TextInputType.name ,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Username is required';
+                                } else if (value.length < 3) {
+                                  return 'Username must be at least 3 characters long';
+                                } else if (!isUsernameValid(value)) {
+                                  return 'Enter a valid username \n (only letters, numbers, and underscores are allowed)';
+                                } else if(userConfirm){
+                                  return TKeys.userNameError.translate(context);
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.people, color: Colors.white,),
+                                label: Text(
+                                  TKeys.userName.translate(context),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide:
+                                  BorderSide(color: Colors.white, width: 1.0),
+                                ),
+                                border: const UnderlineInputBorder(
+                                  borderRadius:
+                                  BorderRadius.all(Radius.circular(20.0)),
+                                  borderSide:
+                                  BorderSide(width: 1, color: Colors.white),
+                                ),
+                              ),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                              ),
+                              onChanged:(value){
+                                setState(() {
+                                  if(usersIDs.contains(value)){
+                                    userConfirm = true;
+                                  }
+                                  else{
+                                    userConfirm = false;
+                                    userName = value;
+                                  }
+                                });
+                              },
+                            ),
+                          ),
                         ),
-                      ),
-                      onChanged:(value){
-                        setState(() {
-                          email = value;
-                        });
-                      },
-                    ),
-                  ),
-                  TextFormField(
-                    controller: userController,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.people, color: Colors.brown.shade700,),
-                      labelText: TKeys.userName.translate(context),
-                      floatingLabelStyle: MaterialStateTextStyle.resolveWith(
-                              (Set<MaterialState> states) {
-                            final Color color = states.contains(MaterialState.error)
-                                ? Theme.of(context).colorScheme.error
-                                : Colors.brown.shade700;
-                            return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
-                          }),
-                      labelStyle: MaterialStateTextStyle.resolveWith(
-                              (Set<MaterialState> states) {
-                            final Color color = states.contains(MaterialState.error)
-                                ? Theme.of(context).colorScheme.error
-                                : Colors.brown.shade700;
-                            return TextStyle(color: color, letterSpacing: 1.3);
-                          }),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                        borderSide: BorderSide(width: 3, color: Colors.brown.shade800 ,),
-                      ),
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                        borderSide: BorderSide(width: 1, color: Colors.brown ,),
-                      ),
-                    ),
-                    onChanged:(value){
-                      setState(() {
-                        if(usersIDs.contains(value)){
-                          userConfirm = true;
-                        }
-                        else{
-                          userConfirm = false;
-                          userName = value;
-                        }
-                      });
-                    },
-                  ),
-                  Visibility(visible:userConfirm ,child: Text(TKeys.userNameError.translate(context),style: TextStyle(color: Colors.red),)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10.0),
-                    child: TextFormField(
-                      controller: passwordController,
-                      keyboardType: TextInputType.text,
-                      obscureText: showPassword,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.lock, color: Colors.brown.shade700,),
-                        suffixIcon: IconButton(
-                          icon: Icon(showPassword?Icons.visibility:Icons.visibility_off, color: Colors.brown.shade700,),
-                          onPressed: (){
-                            if (showPassword == true) {
-                              setState(() {
-                                showPassword = false;
-                              });
-                            } else {
-                              setState(() {
-                                showPassword = true;
-                              });
-                            }
-                          },
+                        Padding(
+                          padding: EdgeInsets.only(left: width * .05, bottom: 10),
+                          child: Container(
+                            padding: const EdgeInsets.only(left: 15.0),
+                            decoration: BoxDecoration(
+                                color: Colors.brown.shade600.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(20.0)),
+                            child: TextFormField(
+                              controller: passwordController,
+                              cursorColor: Colors.white,
+                              keyboardType: TextInputType.text,
+                              obscureText: showPassword,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Password is required';
+                                } else if (value.length < 6) {
+                                  return 'Password must be at least 6 characters long';
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.lock, color: Colors.white,),
+                                suffixIcon: IconButton(
+                                  icon: Icon(showPassword?Icons.visibility:Icons.visibility_off, color: Colors.white,),
+                                  onPressed: (){
+                                    if (showPassword == true) {
+                                      setState(() {
+                                        showPassword = false;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        showPassword = true;
+                                      });
+                                    }
+                                  },
+                                ),
+                                label: Text(
+                                  TKeys.password.translate(context),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide:
+                                  BorderSide(color: Colors.white, width: 1.0),
+                                ),
+                                border: const UnderlineInputBorder(
+                                  borderRadius:
+                                  BorderRadius.all(Radius.circular(20.0)),
+                                  borderSide:
+                                  BorderSide(width: 1, color: Colors.white),
+                                ),
+                              ),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold),
+                              onChanged:(value){
+                                password = value;
+                              },
+                            ),
+                          ),
                         ),
-                        labelText: TKeys.password.translate(context),
-                        floatingLabelStyle: MaterialStateTextStyle.resolveWith(
-                                (Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade700;
-                              return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
-                            }),
-                        labelStyle: MaterialStateTextStyle.resolveWith(
-                                (Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade700;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                          borderSide: BorderSide(width: 3, color: Colors.brown.shade800 ,),
-                        ),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                          borderSide: BorderSide(width: 1, color: Colors.brown ,),
-                        ),
-                      ),
-                      onChanged:(value){
-                        password = value;
-                      },
+                      ],
                     ),
                   ),
                   SizedBox(
                     width: width*.8,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        try{
-                          await _auth.createUserWithEmailAndPassword(email: email, password: password);
-                          await FirebaseFirestore.instance.collection('users').doc(userName).set(
-                              {
-                                'user email': email,
-                                'user password': password,
-                              });
-                          await Navigator.push(context,MaterialPageRoute(builder: (context)=>Register(name: userName,)));
-                        } on FirebaseException catch (e) {
-                          if(e.code == 'weak-password'){
-                            showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    content: Text(
-                                      TKeys.weakPassword.translate(context),
-                                      style: TextStyle(
-                                          color: Colors.red
-                                      ),
-                                    ),
-                                  );
-                                }
-                            );
-                          } else if(e.code == 'email-already-in-use'){
-                            showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    content: Text(
-                                      TKeys.accountExist.translate(context),
-                                      style: TextStyle(
-                                          color: Colors.red
-                                      ),
-                                    ),
-                                  );
-                                }
-                            );
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          // Navigate the user to the Home page
+                          try{
+                            auth.createUserWithEmailAndPassword(email: email, password: password).then((value){
+                              FirebaseFirestore.instance.collection('users').doc(userName).set(
+                                  {
+                                    'user email': email,
+                                    'user password': password,
+                                  });
+                              Navigator.push(context,MaterialPageRoute(builder: (context)=>Register(name: userName,)));
+                            });
+                          } on FirebaseException catch (e) {
+                            if(e.code == 'weak-password'){
+                              showErrorDialog(context, TKeys.weakPassword.translate(context));
+                            } else if(e.code == 'email-already-in-use'){
+                              showErrorDialog(context, TKeys.accountExist.translate(context));
+                            }
                           }
+                        }
+                        else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please fill input')),
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -248,7 +274,7 @@ class _SignUpState extends State<SignUp> {
                         backgroundColor: Colors.brown.shade600,
                         disabledForegroundColor: Colors.brown.shade600,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
-                      child: Text(TKeys.signUp.translate(context), style: TextStyle(color: Colors.white, fontSize: 24,),),
+                      child: Text(TKeys.signUp.translate(context), style: const TextStyle(color: Colors.white, fontSize: 24,),),
                     ),
                   ),
                   TextButton(
@@ -265,5 +291,11 @@ class _SignUpState extends State<SignUp> {
         ],
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getDocumentIDs();
   }
 }

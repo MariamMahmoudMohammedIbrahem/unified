@@ -1,10 +1,11 @@
-import 'dart:async';
 import 'dart:ui';
 
 import 'package:azan/constants.dart';
 import 'package:azan/t_key.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
+import '../functions.dart';
 class ResetPassword extends StatefulWidget {
 
   const ResetPassword({Key? key}) : super(key: key);
@@ -14,62 +15,9 @@ class ResetPassword extends StatefulWidget {
 }
 
 class _ResetPasswordState extends State<ResetPassword> {
-
+  final _formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
   late String _email;
-  final _auth = FirebaseAuth.instance;
-  bool isEmailVerified = false;
-  Timer? _timer;
-  void sendVerificationEmail() async {
-    // User? user = FirebaseAuth.instance.currentUser;
-
-    try {
-      // await user?.sendEmailVerification();
-      await auth.sendPasswordResetEmail(email: _email);
-      // Verification email sent successfully
-      print("Verification email sent!");
-    } catch (e) {
-      // Handle errors
-      print("Error sending verification email: $e");
-    }
-  }
-  Future passwordReset() async {
-    try{
-      await _auth.sendPasswordResetEmail(email: _email);
-      showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              content: Text(TKeys.resetPassword.translate(context)),
-            );
-          }
-      );
-    } catch (e) {
-      print(e);
-      showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              content: Text(TKeys.problemOccurred.translate(context)),
-            );
-          }
-      );
-    }
-  }
-  checkEmailVerified() async {
-    await FirebaseAuth.instance.currentUser?.reload();
-
-    setState(() {
-      isEmailVerified = FirebaseAuth.instance.currentUser!.emailVerified;
-    });
-
-    if (isEmailVerified) {
-      // TODO: implement your code after email verification
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Email Successfully Verified")));
-
-      _timer?.cancel();
-    }
-  }
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -111,37 +59,66 @@ class _ResetPasswordState extends State<ResetPassword> {
                           ),
                         )),
                   ),
-                  TextFormField(
-                    style: TextStyle(color: Colors.grey.shade600,fontSize: 17),
-                    textAlign: TextAlign.start,
-                    onChanged: (value) {
-                      _email = value;
-                    },
-                    // obscureText: obscureText,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.email, color: Colors.brown.shade700,),
-                      labelText: TKeys.email.translate(context),
-                      floatingLabelStyle: MaterialStateTextStyle.resolveWith(
-                              (Set<MaterialState> states) {
-                            final Color color = states.contains(MaterialState.error)
-                                ? Theme.of(context).colorScheme.error
-                                : Colors.brown.shade700;
-                            return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
-                          }),
-                      labelStyle: MaterialStateTextStyle.resolveWith(
-                              (Set<MaterialState> states) {
-                            final Color color = states.contains(MaterialState.error)
-                                ? Theme.of(context).colorScheme.error
-                                : Colors.brown.shade700;
-                            return TextStyle(color: color, letterSpacing: 1.3);
-                          }),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                        borderSide: BorderSide(width: 3, color: Colors.brown.shade800 ,),
-                      ),
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                        borderSide: BorderSide(width: 1, color: Colors.brown ,),
+                  Form(
+                    key: _formKey,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: width * .05, bottom: 10),
+                      child: Container(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        decoration: BoxDecoration(
+                            color: Colors.brown.shade600.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(20.0)),
+                        child: TextFormField(
+                          controller: emailController,
+                          cursorColor: Colors.white,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Email is required';
+                            } else if (!isEmailValid(value)) {
+                              return 'Enter a valid email address';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.email, color: Colors.white,),
+                            label: Text(
+                              TKeys.email.translate(context),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            // floatingLabelStyle: MaterialStateTextStyle.resolveWith(
+                            //         (Set<MaterialState> states) {
+                            //       final Color color = states.contains(MaterialState.error)
+                            //           ? Theme.of(context).colorScheme.error
+                            //           : Colors.brown.shade700;
+                            //       return TextStyle(color: color, letterSpacing: 1.3,fontWeight: FontWeight.bold,fontSize: 18);
+                            //     }),
+                            // labelStyle: MaterialStateTextStyle.resolveWith(
+                            //         (Set<MaterialState> states) {
+                            //       final Color color = states.contains(MaterialState.error)
+                            //           ? Theme.of(context).colorScheme.error
+                            //           : Colors.brown.shade700;
+                            //       return TextStyle(color: color, letterSpacing: 1.3);
+                            //     }),
+                            focusedBorder: const UnderlineInputBorder(
+                              borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
+                            ),
+                            border: const UnderlineInputBorder(
+                              borderRadius:
+                              BorderRadius.all(Radius.circular(20.0)),
+                              borderSide:
+                              BorderSide(width: 1, color: Colors.white),
+                            ),
+                          ),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                          onChanged: (value) {
+                            _email = value;
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -154,7 +131,16 @@ class _ResetPasswordState extends State<ResetPassword> {
                           backgroundColor: Colors.brown.shade600,
                           disabledForegroundColor: Colors.brown.shade600,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),),
-                        onPressed: passwordReset,
+                        onPressed: (){
+                          if(_formKey.currentState!.validate()){
+                            passwordReset();
+                          }
+                          else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please fill input')),
+                            );
+                          }
+                        },
                         child: Text(
                           TKeys.proceed.translate(context),
                           style: const TextStyle(color: Colors.white, fontSize: 24,),
@@ -168,5 +154,31 @@ class _ResetPasswordState extends State<ResetPassword> {
         ],
       ),
     );
+  }
+  void passwordReset() {
+    try{
+      auth.sendPasswordResetEmail(email: _email).then((value) {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                content: Text(TKeys.resetPassword.translate(context)),
+              );
+            }
+        );
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+      showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              content: Text(TKeys.problemOccurred.translate(context)),
+            );
+          }
+      );
+    }
   }
 }

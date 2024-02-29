@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:azan/ble/scan.dart';
 import 'package:azan/t_key.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -47,7 +48,6 @@ class SettingTab extends StatelessWidget {
           subscribeToCharacteristic: interactor.subScribeToCharacteristic,
           name: device.name,
           userName: userName,
-          // device: device,
         ),
   );
 }
@@ -97,7 +97,6 @@ class Setting extends StatefulWidget {
     required this.subscribeToCharacteristic,
     required this.name,
     required this.userName,
-    // required this.device,
     super.key,
   });
   final SettingViewModel viewModel;
@@ -115,7 +114,6 @@ class Setting extends StatefulWidget {
   subscribeToCharacteristic;
   final String name;
   final String userName;
-  // final DiscoveredDevice device;
 
   @override
   State<Setting> createState() => _SettingState();
@@ -123,343 +121,6 @@ class Setting extends StatefulWidget {
 
 class _SettingState extends State<Setting> {
 
-  void getAllDataAndSubscribe() async {
-    List<Map<int, List<int>>> dataSets = [
-      {1: getDate},
-      {2: getPray},
-      {3: getLocation},
-      {4: getZone},
-    ];
-
-    for (var data in dataSets) {
-      print('inside hello');
-      int dataType = data.keys.first;
-      List<int> dataToWrite = data.values.first;
-      print('dataType $dataType');
-      print('dataToWrite $dataToWrite');
-      print('awaiting response $awaitingResponse');
-      if (!awaitingResponse) {
-        awaitingResponse = true;
-        resetDateSubscription(dataType);
-        subscribeCharacteristic(dataType, widget.viewModel.deviceId);
-        await widget.writeWithoutResponse(widget.characteristic, dataToWrite);
-      } else {
-        print('Awaiting response, cannot send another packet yet.');
-        break; // Exit the loop if awaiting a response
-      }
-    }
-    if (!list1) {
-      resetDateSubscription(1);
-      subscribeCharacteristic(1, widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getDate);
-    } else if (!list2) {
-      //edit
-      resetDateSubscription(2);
-      subscribeCharacteristic(2, widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getPray);
-    } else if (!list3) {
-      resetDateSubscription(3);
-      subscribeCharacteristic(3, widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getLocation);
-    } else {
-      resetDateSubscription(4);
-      subscribeCharacteristic(4, widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getZone);
-    }
-  }
-
-  Future<void> settingDate() async {
-    // composeBlePacket(0x01, [setYear,setMonth,setDay,setHour,setMinute,setSecond],'date');
-    List<int> data = [setYear,setMonth,setDay,setHour,setMinute,setSecond];
-    setDate = [];
-    int startFrame = 0xAA;
-    int endFrame = 0xAA;
-    final hexValues = data.map((value) => int.parse(value.toRadixString(16), radix: 16)).toList();//convert
-    setDate.add(startFrame);
-    setDate.add(0x01);
-    setDate.add(data.length);
-    setDate.addAll(hexValues);
-    int value = 0;
-    for (int i = 1; i <= setDate.length-1; i++) {
-      value += setDate[i];
-    }
-    setDate.add(value);
-    setDate.add(endFrame);
-    widget.subscribeToCharacteristic(widget.characteristic);
-    await widget.writeWithoutResponse(widget.characteristic, setDate);
-    // Listen for incoming data asynchronously
-    responseSubscription = widget
-        .subscribeToCharacteristic(widget.characteristic)
-        .listen((receivedData) async {
-      if (receivedData.length == success.length &&
-          receivedData.every(
-                  (element) => element == success[receivedData.indexOf(element)])) {
-        print('Received expected data, setting date and time');
-        responseSubscription?.cancel();
-        setDateTime = true;
-        periodicTimer?.cancel();
-        hourTimer?.cancel();
-        disconnectRestart();
-      }
-    });
-  }
-
-  Future<void> disconnectRestart() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.brown.shade50,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.brown.shade700,),
-            const SizedBox(height: 16.0),
-            Text(TKeys.restarting.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
-          ],
-        ),
-      ),
-    );
-    try{
-      List<int> dataSets = [1,2,3,4];
-      for (int data in dataSets) {
-        resetDateSubscription(data);
-      }
-      await widget.writeWithoutResponse(widget.characteristic, restart);
-      widget.subscribeToCharacteristic(widget.characteristic);
-      await Future.delayed(const Duration(seconds: 2));
-      // timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
-      if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
-        setState(() {
-          found = false;
-          deviceName = '';
-          restartFlag = true;
-          hourTimer?.cancel();
-          periodicTimer?.cancel();
-        });
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ScanningListScreen(
-              userName: widget.userName,
-            ),
-          ),
-        );
-      }
-      else{
-        ///show dialog alert that tell to try again
-        Navigator.pop(context);
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            backgroundColor: Colors.brown.shade50,
-            title: Text(TKeys.error.translate(context)),
-            content: Text(TKeys.disconnectHeadline.translate(context)),
-            actions: [
-              ElevatedButton(
-                onPressed: (){
-                  if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
-                    setState(() {
-                      hourTimer?.cancel();
-                      periodicTimer?.cancel();
-                    });
-                    widget.viewModel.disconnect();
-                  }
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
-                },
-                style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.brown,
-                    backgroundColor: Colors.brown.shade600,
-                    disabledForegroundColor: Colors.brown.shade600,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-              ),
-            ],
-          ),
-        );
-      }
-      // });
-      // if (widget.viewModel.connectionStatus ==
-      //     DeviceConnectionState.disconnected) {
-      //   setState(() {
-      //     found = false;
-      //     deviceName = '';
-      //     restartFlag = true;
-      //   });
-      //   Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //           builder: (context) => ScanningListScreen(
-      //             userName: widget.userName,
-      //           )));
-      // }
-    }
-    catch(e){
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.error.translate(context)),
-          content: Text(TKeys.restartError.translate(context)),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.brown,
-                  backgroundColor: Colors.brown.shade600,
-                  disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-            ),
-          ],
-        ),
-      );
-    }
-
-  }
-
-  //problem here
-  Future<void> settingLocation() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.brown.shade50,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.brown.shade700,),
-            const SizedBox(height: 16.0),
-            Text(TKeys.updating.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
-          ],
-        ),
-      ),
-    );
-
-    try {
-      widget.subscribeToCharacteristic(widget.characteristic);
-      await widget.writeWithoutResponse(widget.characteristic, setLocation);
-      responseSubscription = widget
-          .subscribeToCharacteristic(widget.characteristic)
-          .listen((receivedData) {
-        if (receivedData.length == success.length &&
-            receivedData.every(
-                    (element) => element == success[receivedData.indexOf(element)])) {
-          print('Received expected data, setting date and time');
-          responseSubscription?.cancel();
-          print('ready to get data');
-          //add get all data
-          awaitingResponse = false;
-          saveSettingData(2, widget.userName);
-          // showToast = true;
-          showToastMessage();
-          getAllDataAndSubscribe();
-          Navigator.pop(context);
-        }
-        else{
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: Colors.brown.shade50,
-              title: Text(TKeys.error.translate(context)),
-              content: Text(TKeys.locationError.translate(context)),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.brown,
-                      backgroundColor: Colors.brown.shade600,
-                      disabledForegroundColor: Colors.brown.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-                ),
-              ],
-            ),
-          );
-        }
-        });
-    }
-    catch(e){
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.error.translate(context)),
-          content: Text(TKeys.locationError.translate(context)),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.brown,
-                  backgroundColor: Colors.brown.shade600,
-                  disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  Future<void> settingZone() async {
-    widget.subscribeToCharacteristic(widget.characteristic);
-    await widget.writeWithoutResponse(widget.characteristic, setZone);
-    responseSubscription = widget
-        .subscribeToCharacteristic(widget.characteristic)
-        .listen((receivedData) {
-      if (receivedData.length == success.length &&
-          receivedData.every(
-                  (element) => element == success[receivedData.indexOf(element)])) {
-        print('Received expected data, setting date and time');
-        responseSubscription?.cancel();
-        print('ready to get data');
-        saveSettingData(3, widget.userName);
-        showToastMessage();
-        getAllDataAndSubscribe();
-      }
-    });
-  }
-  Future<void> testingMode() async{
-    widget
-        .subscribeToCharacteristic(widget.characteristic);
-    await widget.writeWithoutResponse(
-        widget.characteristic, getTest);
-    saveSettingData(5, widget.userName);
-  }
-  Future<void> settingSound(String dataType) async{
-    // List<int> soundPacket = [];
-    switch(dataType){
-      case 'sound 1':
-        // soundPacket = getSound1;
-        await widget.writeWithoutResponse(widget.characteristic, getSound1);
-        break;
-      case 'sound 2':
-        // soundPacket = getSound2;
-        await widget.writeWithoutResponse(widget.characteristic, getSound2);
-        break;
-      case 'sound 3':
-        // soundPacket = getSound3;
-        await widget.writeWithoutResponse(widget.characteristic, getSound3);
-        break;
-      case 'sound 4':
-        // soundPacket = getSound4;
-        await widget.writeWithoutResponse(widget.characteristic, getSound4);
-        break;
-    }
-    widget.subscribeToCharacteristic(widget.characteristic);
-
-  }
-  void initState(){
-    super.initState();
-  }
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -471,12 +132,12 @@ class _SettingState extends State<Setting> {
           onPressed: (){
             Navigator.pop(context,true);
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
             size: 35,),
         ),
-        title: Text(TKeys.settings.translate(context),style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 20,),),
+        title: Text(TKeys.settings.translate(context),style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 20,),),
         centerTitle: true,
       ),
       body: Stack(
@@ -811,7 +472,7 @@ class _SettingState extends State<Setting> {
                   SizedBox(
                     width: width * .8,
                     child: ElevatedButton.icon(
-                      onPressed: () async {
+                      onPressed: () {
                         settingLocation();
                       },
                       style: ElevatedButton.styleFrom(
@@ -1004,5 +665,353 @@ class _SettingState extends State<Setting> {
         ],
       ),
     );
+  }
+
+  void getAllDataAndSubscribe() async {
+    List<Map<int, List<int>>> dataSets = [
+      {1: getDate},
+      {2: getPray},
+      {3: getLocation},
+      {4: getZone},
+    ];
+
+    for (var data in dataSets) {
+      if (kDebugMode) {
+        print('inside hello');
+      }
+      int dataType = data.keys.first;
+      List<int> dataToWrite = data.values.first;
+      if (kDebugMode) {
+        print('dataType $dataType');
+        print('dataToWrite $dataToWrite');
+        print('awaiting response $awaitingResponse');
+      }
+      if (!awaitingResponse) {
+        awaitingResponse = true;
+        resetDateSubscription(dataType);
+        subscribeCharacteristic(dataType, widget.viewModel.deviceId);
+        await widget.writeWithoutResponse(widget.characteristic, dataToWrite);
+      } else {
+        if (kDebugMode) {
+          print('Awaiting response, cannot send another packet yet.');
+        }
+        break; // Exit the loop if awaiting a response
+      }
+    }
+    if (!list1) {
+      resetDateSubscription(1);
+      subscribeCharacteristic(1, widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getDate);
+    } else if (!list2) {
+      //edit
+      resetDateSubscription(2);
+      subscribeCharacteristic(2, widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getPray);
+    } else if (!list3) {
+      resetDateSubscription(3);
+      subscribeCharacteristic(3, widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getLocation);
+    } else {
+      resetDateSubscription(4);
+      subscribeCharacteristic(4, widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getZone);
+    }
+  }
+
+  Future<void> settingDate() async {
+    // composeBlePacket(0x01, [setYear,setMonth,setDay,setHour,setMinute,setSecond],'date');
+    List<int> data = [setYear,setMonth,setDay,setHour,setMinute,setSecond];
+    setDate = [];
+    int startFrame = 0xAA;
+    int endFrame = 0xAA;
+    final hexValues = data.map((value) => int.parse(value.toRadixString(16), radix: 16)).toList();//convert
+    setDate.add(startFrame);
+    setDate.add(0x01);
+    setDate.add(data.length);
+    setDate.addAll(hexValues);
+    int value = 0;
+    for (int i = 1; i <= setDate.length-1; i++) {
+      value += setDate[i];
+    }
+    setDate.add(value);
+    setDate.add(endFrame);
+    widget.subscribeToCharacteristic(widget.characteristic);
+    await widget.writeWithoutResponse(widget.characteristic, setDate);
+    // Listen for incoming data asynchronously
+    responseSubscription = widget
+        .subscribeToCharacteristic(widget.characteristic)
+        .listen((receivedData) async {
+      if (receivedData.length == success.length &&
+          receivedData.every(
+                  (element) => element == success[receivedData.indexOf(element)])) {
+        if (kDebugMode) {
+          print('Received expected data, setting date and time');
+        }
+        responseSubscription?.cancel();
+        setDateTime = true;
+        periodicTimer?.cancel();
+        hourTimer?.cancel();
+        disconnectRestart();
+      }
+    });
+  }
+
+  Future<void> disconnectRestart() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text(TKeys.restarting.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+    try{
+      List<int> dataSets = [1,2,3,4];
+      for (int data in dataSets) {
+        resetDateSubscription(data);
+      }
+      widget.writeWithoutResponse(widget.characteristic, restart).then((value) {
+        widget.subscribeToCharacteristic(widget.characteristic);
+      }).then((value) async {
+        await Future.delayed(const Duration(seconds: 2));
+      });
+      // timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
+      if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
+        setState(() {
+          found = false;
+          deviceName = '';
+          restartFlag = true;
+          hourTimer?.cancel();
+          periodicTimer?.cancel();
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ScanningListScreen(
+              userName: widget.userName,
+            ),
+          ),
+        );
+      }
+      else{
+        ///show dialog alert that tell to try again
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.brown.shade50,
+            title: Text(TKeys.error.translate(context)),
+            content: Text(TKeys.disconnectHeadline.translate(context)),
+            actions: [
+              ElevatedButton(
+                onPressed: (){
+                  if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
+                    setState(() {
+                      hourTimer?.cancel();
+                      periodicTimer?.cancel();
+                    });
+                    widget.viewModel.disconnect();
+                  }
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
+                },
+                style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.brown,
+                    backgroundColor: Colors.brown.shade600,
+                    disabledForegroundColor: Colors.brown.shade600,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+              ),
+            ],
+          ),
+        );
+      }
+      // });
+      // if (widget.viewModel.connectionStatus ==
+      //     DeviceConnectionState.disconnected) {
+      //   setState(() {
+      //     found = false;
+      //     deviceName = '';
+      //     restartFlag = true;
+      //   });
+      //   Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (context) => ScanningListScreen(
+      //             userName: widget.userName,
+      //           )));
+      // }
+    }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text(TKeys.restartError.translate(context)),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      );
+    }
+
+  }
+
+  void settingLocation() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text(TKeys.updating.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // widget.subscribeToCharacteristic(widget.characteristic);
+      widget.writeWithoutResponse(widget.characteristic, setLocation).then((value) {
+        responseSubscription = widget
+            .subscribeToCharacteristic(widget.characteristic)
+            .listen((receivedData) {
+          if (receivedData.length == success.length &&
+              receivedData.every(
+                      (element) => element == success[receivedData.indexOf(element)])) {
+            if (kDebugMode) {
+              print('Received expected data, setting date and time');
+            }
+            responseSubscription?.cancel();
+            if (kDebugMode) {
+              print('ready to get data');
+            }
+            //add get all data
+            awaitingResponse = false;
+            saveSettingData(2, widget.userName);
+            // showToast = true;
+            showToastMessage();
+            getAllDataAndSubscribe();
+            Navigator.pop(context);
+          }
+          else{
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                backgroundColor: Colors.brown.shade50,
+                title: Text(TKeys.error.translate(context)),
+                content: Text(TKeys.locationError.translate(context)),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.brown,
+                        backgroundColor: Colors.brown.shade600,
+                        disabledForegroundColor: Colors.brown.shade600,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+                  ),
+                ],
+              ),
+            );
+          }
+        });
+      });
+    }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text(TKeys.locationError.translate(context)),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> settingZone() async {
+    widget.subscribeToCharacteristic(widget.characteristic);
+    await widget.writeWithoutResponse(widget.characteristic, setZone);
+    responseSubscription = widget
+        .subscribeToCharacteristic(widget.characteristic)
+        .listen((receivedData) {
+      if (receivedData.length == success.length &&
+          receivedData.every(
+                  (element) => element == success[receivedData.indexOf(element)])) {
+        if (kDebugMode) {
+          print('Received expected data, setting date and time');
+        }
+        responseSubscription?.cancel();
+        if (kDebugMode) {
+          print('ready to get data');
+        }
+        saveSettingData(3, widget.userName);
+        showToastMessage();
+        getAllDataAndSubscribe();
+      }
+    });
+  }
+  Future<void> testingMode() async{
+    widget
+        .subscribeToCharacteristic(widget.characteristic);
+    await widget.writeWithoutResponse(
+        widget.characteristic, getTest);
+    saveSettingData(5, widget.userName);
+  }
+  Future<void> settingSound(String dataType) async{
+    switch(dataType){
+      case 'sound 1':
+        await widget.writeWithoutResponse(widget.characteristic, getSound1);
+        break;
+      case 'sound 2':
+        await widget.writeWithoutResponse(widget.characteristic, getSound2);
+        break;
+      case 'sound 3':
+        await widget.writeWithoutResponse(widget.characteristic, getSound3);
+        break;
+      case 'sound 4':
+        await widget.writeWithoutResponse(widget.characteristic, getSound4);
+        break;
+    }
+    widget.subscribeToCharacteristic(widget.characteristic);
+
   }
 }

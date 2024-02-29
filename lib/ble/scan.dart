@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:azan/ble/settings.dart';
 import 'package:azan/t_key.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -15,7 +15,7 @@ import '../account/account_details.dart';
 import '../constants.dart';
 import '../feedback/feedback1.dart';
 import '../functions.dart';
-import '../register/login.dart';
+import '../login/login.dart';
 import '../password_reset/reset_password.dart';
 import 'ble_device_connector.dart';
 import 'ble_device_interactor.dart';
@@ -129,290 +129,9 @@ class Connecting extends StatefulWidget {
 
 class _ConnectingState extends State<Connecting> {
 
-
-  void getAllDataAndSubscribe() async {
-    List<Map<int, List<int>>> dataSets = [
-      {1: getDate},
-      {2: getPray},
-      {3: getLocation},
-      {4: getZone},
-    ];
-    for (var data in dataSets) {
-      int dataType = data.keys.first;
-      List<int> dataToWrite = data.values.first;
-      print('dataType $dataType');
-      print('dataToWrite $dataToWrite');
-      print('awaiting response $awaitingResponse');
-      if (!awaitingResponse) {
-        awaitingResponse = true;
-        resetDateSubscription(dataType);
-        setState(() {
-          subscribeCharacteristic(dataType, widget.viewModel.deviceId);
-        });
-
-        await widget.writeWithoutResponse(widget.characteristic, dataToWrite);
-      } else {
-        print('Awaiting response, cannot send another packet yet.');
-        break; // Exit the loop if awaiting a response
-      }
-    }
-    if (!list1) {
-      resetDateSubscription(1);
-      subscribeCharacteristic(1, widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getDate);
-    } else if (!list2) {
-      //edit
-      resetDateSubscription(2);
-      subscribeCharacteristic(2,widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getPray);
-    } else if (!list3) {
-      resetDateSubscription(3);
-      subscribeCharacteristic(3, widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getLocation);
-    } else {
-      resetDateSubscription(4);
-      subscribeCharacteristic(4,widget.viewModel.deviceId);
-      await widget.writeWithoutResponse(widget.characteristic, getZone);
-    }
-  }
-
-  Future<void> updateDateTime() async {
-    await getCurrentDateTime();
-    setState(() {
-      if (widget.viewModel.connectionStatus ==
-          DeviceConnectionState.disconnected) {
-        Fluttertoast.showToast(
-          msg: 'device Disconnected',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.SNACKBAR,
-          backgroundColor: Colors.brown.shade700,
-          textColor: Colors.white,
-        );
-        hourTimer?.cancel();
-        periodicTimer?.cancel();
-        deviceName = '';
-        found = false;
-        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
-      }
-    });
-  }
-
-  void startPeriodicTimer() {
-    hourTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      updateDateTime(); // Trigger the update asynchronously
-    });
-  }
-
-  Future<void> settingDate() async {
-    // composeBlePacket(0x01, [setYear,setMonth,setDay,setHour,setMinute,setSecond],'date');
-    List<int> data = [setYear,setMonth,setDay,setHour,setMinute,setSecond];
-    setDate = [];
-    int startFrame = 0xAA;
-    int endFrame = 0xAA;
-    final hexValues = data.map((value) => int.parse(value.toRadixString(16), radix: 16)).toList();//convert
-    setDate.add(startFrame);
-    setDate.add(0x01);
-    setDate.add(data.length);
-    setDate.addAll(hexValues);
-    int value = 0;
-    for (int i = 1; i <= setDate.length-1; i++) {
-      value += setDate[i];
-    }
-    setDate.add(value);
-    setDate.add(endFrame);
-    widget.subscribeToCharacteristic(widget.characteristic);
-    await widget.writeWithoutResponse(widget.characteristic, setDate);
-    // Listen for incoming data asynchronously
-    responseSubscription = widget
-        .subscribeToCharacteristic(widget.characteristic)
-        .listen((receivedData) async {
-      if (receivedData.length == success.length &&
-          receivedData.every(
-              (element) => element == success[receivedData.indexOf(element)])) {
-        print('Received expected data, setting date and time');
-        responseSubscription?.cancel();
-        setDateTime = true;
-        periodicTimer?.cancel();
-        hourTimer?.cancel();
-        disconnectRestart();
-      }
-    });
-  }
-
   late StreamSubscription<$ConnectionStateUpdate> connectionStateSubscription;
 
-  Future<void> disconnectRestart() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.brown.shade50,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.brown.shade700,),
-            const SizedBox(height: 16.0),
-            Text(TKeys.restarting.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
-          ],
-        ),
-      ),
-    );
-    try{
-      List<int> dataSets = [1,2,3,4];
-      for (int data in dataSets) {
-        resetDateSubscription(data);
-      }
-      await widget.writeWithoutResponse(widget.characteristic, restart);
-      widget.subscribeToCharacteristic(widget.characteristic);
-      await Future.delayed(const Duration(seconds: 2));
-      // timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
-        if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
-          setState(() {
-            found = false;
-            deviceName = '';
-            restartFlag = true;
-            hourTimer?.cancel();
-            periodicTimer?.cancel();
-          });
-          ///TODO: REMOVE FROM INSIDE TIMER
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ScanningListScreen(
-                userName: widget.userName,
-              ),
-            ),
-          );
-        }
-        else{
-          ///show dialog alert that tell to try again
-          Navigator.pop(context);
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => AlertDialog(
-              backgroundColor: Colors.brown.shade50,
-              title: Text(TKeys.error.translate(context)),
-              content: Text(TKeys.disconnectHeadline.translate(context)),
-              actions: [
-                ElevatedButton(
-                  onPressed: (){
-                    if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
-                      setState(() {
-                        hourTimer?.cancel();
-                        periodicTimer?.cancel();
-                      });
-                      widget.viewModel.disconnect();
-                    }
-                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
-                  },
-                  style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.brown,
-                          backgroundColor: Colors.brown.shade600,
-                          disabledForegroundColor: Colors.brown.shade600,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                      child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-                ),
-              ],
-            ),
-          );
-        }
-      // });
-      // if (widget.viewModel.connectionStatus ==
-      //     DeviceConnectionState.disconnected) {
-      //   setState(() {
-      //     found = false;
-      //     deviceName = '';
-      //     restartFlag = true;
-      //   });
-      //   Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //           builder: (context) => ScanningListScreen(
-      //             userName: widget.userName,
-      //           )));
-      // }
-    }
-    catch(e){
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.error.translate(context)),
-          content: Text(TKeys.restartError.translate(context)),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.brown,
-                  backgroundColor: Colors.brown.shade600,
-                  disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.ok.translate(context),style: TextStyle(color: Colors.white,fontSize: 18),),
-            ),
-          ],
-        ),
-      );
-    }
-
-  }
-
-  @override
-  void initState() {
-    setState(() {
-      awaitingResponse = false;
-      getCurrentDateTime();
-      list1 = false;
-      list2 = false;
-      list3 = false;
-      list4 = false;
-    });
-    //connect and get data
-    showToastMessage();
-    periodicTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      if (!widget.viewModel.deviceConnected) {
-        widget.viewModel.connect();
-      } else if (!list1 || !list2 || !list3 || !list4) {
-        getAllDataAndSubscribe();
-      }
-      else if(restartFlag){
-        print('1 restart flag');
-      saveSettingData(4, widget.userName);
-      }
-      else if(setDateTime) {
-        print('1 $setDateTime');
-        saveSettingData(1, widget.userName);
-      }
-      else {
-        saveInFirebase(widget.userName);
-        t.cancel();
-      }
-    });
-    //update time each minute
-    startPeriodicTimer();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    periodicTimer?.cancel();
-    hourTimer?.cancel();
-    deviceName = '';
-    super.dispose();
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  signOut() async {
-    await widget.viewModel.deviceConnector.disconnect(widget.device.id);
-    await auth.signOut();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('email', '');
-    await prefs.setString('password', '');
-    Navigator.pushAndRemoveUntil(
-        context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -450,8 +169,7 @@ class _ConnectingState extends State<Connecting> {
                     }
                     else{
                       widget.viewModel.disconnect();
-                      if (widget.viewModel.connectionStatus ==
-                          ConnectionStatus.disconnected) {
+                      if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
                         setState(() {
                           deviceName = '';
                           found = false;
@@ -487,7 +205,7 @@ class _ConnectingState extends State<Connecting> {
           },
         );
 
-        return shouldPop ?? false;
+        return shouldPop;
       },
       child: Scaffold(
         key: _scaffoldKey,
@@ -747,7 +465,7 @@ class _ConnectingState extends State<Connecting> {
                     });
                     periodicTimer?.cancel();
                     hourTimer?.cancel();
-                    signOut();
+                    logOut();
                   },
                 ),
               ],
@@ -1157,6 +875,302 @@ class _ConnectingState extends State<Connecting> {
       ),
     );
   }
+
+  void getAllDataAndSubscribe() async {
+    List<Map<int, List<int>>> dataSets = [
+      {1: getDate},
+      {2: getPray},
+      {3: getLocation},
+      {4: getZone},
+    ];
+    for (var data in dataSets) {
+      int dataType = data.keys.first;
+      List<int> dataToWrite = data.values.first;
+      if (kDebugMode) {
+        print('dataType $dataType');
+        print('dataToWrite $dataToWrite');
+        print('awaiting response $awaitingResponse');
+      }
+      if (!awaitingResponse) {
+        awaitingResponse = true;
+        resetDateSubscription(dataType);
+        setState(() {
+          subscribeCharacteristic(dataType, widget.viewModel.deviceId);
+        });
+
+        await widget.writeWithoutResponse(widget.characteristic, dataToWrite);
+      } else {
+        if (kDebugMode) {
+          print('Awaiting response, cannot send another packet yet.');
+        }
+        break; // Exit the loop if awaiting a response
+      }
+    }
+    if (!list1) {
+      resetDateSubscription(1);
+      subscribeCharacteristic(1, widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getDate);
+    } else if (!list2) {
+      //edit
+      resetDateSubscription(2);
+      subscribeCharacteristic(2,widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getPray);
+    } else if (!list3) {
+      resetDateSubscription(3);
+      subscribeCharacteristic(3, widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getLocation);
+    } else {
+      resetDateSubscription(4);
+      subscribeCharacteristic(4,widget.viewModel.deviceId);
+      await widget.writeWithoutResponse(widget.characteristic, getZone);
+    }
+  }
+
+  Future<void> updateDateTime() async {
+    await getCurrentDateTime();
+    setState(() {
+      if (widget.viewModel.connectionStatus ==
+          DeviceConnectionState.disconnected) {
+        Fluttertoast.showToast(
+          msg: 'device Disconnected',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.SNACKBAR,
+          backgroundColor: Colors.brown.shade700,
+          textColor: Colors.white,
+        );
+        hourTimer?.cancel();
+        periodicTimer?.cancel();
+        deviceName = '';
+        found = false;
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
+      }
+    });
+  }
+
+  void startPeriodicTimer() {
+    hourTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      updateDateTime(); // Trigger the update asynchronously
+    });
+  }
+
+  Future<void> settingDate() async {
+    // composeBlePacket(0x01, [setYear,setMonth,setDay,setHour,setMinute,setSecond],'date');
+    List<int> data = [setYear,setMonth,setDay,setHour,setMinute,setSecond];
+    setDate = [];
+    int startFrame = 0xAA;
+    int endFrame = 0xAA;
+    final hexValues = data.map((value) => int.parse(value.toRadixString(16), radix: 16)).toList();//convert
+    setDate.add(startFrame);
+    setDate.add(0x01);
+    setDate.add(data.length);
+    setDate.addAll(hexValues);
+    int value = 0;
+    for (int i = 1; i <= setDate.length-1; i++) {
+      value += setDate[i];
+    }
+    setDate.add(value);
+    setDate.add(endFrame);
+    widget.subscribeToCharacteristic(widget.characteristic);
+    await widget.writeWithoutResponse(widget.characteristic, setDate);
+    // Listen for incoming data asynchronously
+    responseSubscription = widget
+        .subscribeToCharacteristic(widget.characteristic)
+        .listen((receivedData) async {
+      if (receivedData.length == success.length &&
+          receivedData.every(
+                  (element) => element == success[receivedData.indexOf(element)])) {
+        if (kDebugMode) {
+          print('Received expected data, setting date and time');
+        }
+        responseSubscription?.cancel();
+        setDateTime = true;
+        periodicTimer?.cancel();
+        hourTimer?.cancel();
+        disconnectRestart();
+      }
+    });
+  }
+
+
+  Future<void> disconnectRestart() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade50,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.brown.shade700,),
+            const SizedBox(height: 16.0),
+            Text(TKeys.restarting.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+          ],
+        ),
+      ),
+    );
+    try{
+      List<int> dataSets = [1,2,3,4];
+      for (int data in dataSets) {
+        resetDateSubscription(data);
+      }
+      widget.writeWithoutResponse(widget.characteristic, restart).then((value) {
+        widget.subscribeToCharacteristic(widget.characteristic);
+      }).then((value) async {
+        await Future.delayed(const Duration(seconds: 2));
+      });
+      // timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
+      if (widget.viewModel.connectionStatus == DeviceConnectionState.disconnected) {
+        setState(() {
+          found = false;
+          deviceName = '';
+          restartFlag = true;
+          hourTimer?.cancel();
+          periodicTimer?.cancel();
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ScanningListScreen(
+              userName: widget.userName,
+            ),
+          ),
+        );
+      }
+      else{
+        ///show dialog alert that tell to try again
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.brown.shade50,
+            title: Text(TKeys.error.translate(context)),
+            content: Text(TKeys.disconnectHeadline.translate(context)),
+            actions: [
+              ElevatedButton(
+                onPressed: (){
+                  if(widget.viewModel.connectionStatus == DeviceConnectionState.disconnected){
+                    setState(() {
+                      hourTimer?.cancel();
+                      periodicTimer?.cancel();
+                    });
+                    widget.viewModel.disconnect();
+                  }
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> ScanningListScreen(userName: widget.userName)), (route) => false);
+                },
+                style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.brown,
+                    backgroundColor: Colors.brown.shade600,
+                    disabledForegroundColor: Colors.brown.shade600,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+              ),
+            ],
+          ),
+        );
+      }
+      // });
+      // if (widget.viewModel.connectionStatus ==
+      //     DeviceConnectionState.disconnected) {
+      //   setState(() {
+      //     found = false;
+      //     deviceName = '';
+      //     restartFlag = true;
+      //   });
+      //   Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (context) => ScanningListScreen(
+      //             userName: widget.userName,
+      //           )));
+      // }
+    }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          title: Text(TKeys.error.translate(context)),
+          content: Text(TKeys.restartError.translate(context)),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.brown,
+                  backgroundColor: Colors.brown.shade600,
+                  disabledForegroundColor: Colors.brown.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+            ),
+          ],
+        ),
+      );
+    }
+
+  }
+
+  @override
+  void initState() {
+    setState(() {
+      awaitingResponse = false;
+      getCurrentDateTime();
+      list1 = false;
+      list2 = false;
+      list3 = false;
+      list4 = false;
+    });
+    //connect and get data
+    showToastMessage();
+    periodicTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      if (!widget.viewModel.deviceConnected) {
+        widget.viewModel.connect();
+      } else if (!list1 || !list2 || !list3 || !list4) {
+        getAllDataAndSubscribe();
+      }
+      else if(restartFlag){
+        if (kDebugMode) {
+          print('1 restart flag');
+        }
+        saveSettingData(4, widget.userName);
+      }
+      else if(setDateTime) {
+        if (kDebugMode) {
+          print('1 $setDateTime');
+        }
+        saveSettingData(1, widget.userName);
+      }
+      else {
+        saveInFirebase(widget.userName);
+        t.cancel();
+      }
+    });
+    //update time each minute
+    startPeriodicTimer();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    periodicTimer?.cancel();
+    hourTimer?.cancel();
+    deviceName = '';
+    super.dispose();
+  }
+
+  logOut()async{
+    await widget.viewModel.deviceConnector.disconnect(widget.device.id);
+    await auth.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('email', '');
+    await prefs.setString('password', '');
+    signOut();
+  }
+  signOut() async {
+    Navigator.pushAndRemoveUntil(
+      context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
+  }
 }
 
 class NotConnected extends StatefulWidget {
@@ -1168,34 +1182,7 @@ class NotConnected extends StatefulWidget {
 }
 
 class _NotConnectedState extends State<NotConnected> {
-  @override
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  @override
-  void initState() {
-    setState(() {
-      skipData(widget.userName);
-    });
-    hourTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      setState(() {
-        getCurrentDateTime();
-      });
-    });
-    super.initState();
-  }
-
-  signOut() async {
-    await auth.signOut();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('email', '');
-    await prefs.setString('password', '');
-    Navigator.pushAndRemoveUntil(
-      context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
-  }
-
-  void dispose() {
-    super.dispose();
-    hourTimer?.cancel();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1412,7 +1399,7 @@ class _NotConnectedState extends State<NotConnected> {
                     found = false;
                     deviceName = '';
                   });
-                  signOut();
+                  logOut();
                 },
               ),
             ],
@@ -1702,5 +1689,36 @@ class _NotConnectedState extends State<NotConnected> {
         ],
       ),
     );
+  }
+  @override
+  void initState() {
+    setState(() {
+      skipData(widget.userName);
+    });
+    hourTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      setState(() {
+        getCurrentDateTime();
+      });
+    });
+    super.initState();
+  }
+  //reset saved email and password
+  void logOut()async{
+    await auth.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('email', '');
+    await prefs.setString('password', '');
+    signOut();
+
+  }
+  void signOut() {
+    Navigator.pushAndRemoveUntil(
+      context, MaterialPageRoute(builder: (context) => const LogIn()),(route) => false,);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    hourTimer?.cancel();
   }
 }

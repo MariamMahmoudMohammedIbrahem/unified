@@ -17,17 +17,6 @@ class AccountDetails extends StatefulWidget {
 
 class _AccountDetailsState extends State<AccountDetails> {
   @override
-  void initState(){
-    super.initState();
-    setState(() {
-      if(!accFlag){ // add condition if updated
-        showToastMessage();
-        getUserFields(widget.name);
-      }
-    });
-  }
-  @override
-
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     return Scaffold(
@@ -38,12 +27,12 @@ class _AccountDetailsState extends State<AccountDetails> {
           onPressed: (){
             Navigator.pop(context,true);
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
             size: 35,),
         ),
-        title: Text(TKeys.accountDetails.translate(context),style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 20,),),
+        title: Text(TKeys.accountDetails.translate(context),style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 20,),),
         centerTitle: true,
       ),
       body: Stack(
@@ -129,18 +118,6 @@ class _AccountDetailsState extends State<AccountDetails> {
                           enabled: false,
                           decoration: InputDecoration(
                             label: Text(sheikhName,style: const TextStyle(color: Colors.white,fontSize: 20, fontWeight: FontWeight.bold),),
-                            floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade900;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
-                            labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade800;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
                             border: const UnderlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(20.0)),
                               borderSide: BorderSide(width: 1, color: Colors.black),
@@ -159,18 +136,6 @@ class _AccountDetailsState extends State<AccountDetails> {
                           enabled: false,
                           decoration: InputDecoration(
                             label: Text(email,style: const TextStyle(color: Colors.white,fontSize: 20, fontWeight: FontWeight.bold),),
-                            floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade900;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
-                            labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade800;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
                             border: const UnderlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(20.0)),
                               borderSide: BorderSide(width: 1, color: Colors.black),
@@ -189,18 +154,6 @@ class _AccountDetailsState extends State<AccountDetails> {
                           enabled: false,
                           decoration: InputDecoration(
                             label: Text(sheikhPhone,style: const TextStyle(color: Colors.white,fontSize: 20, fontWeight: FontWeight.bold),),
-                            floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade900;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
-                            labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade800;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
                             border: const UnderlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(20.0)),
                               borderSide: BorderSide(width: 1, color: Colors.black),
@@ -219,18 +172,6 @@ class _AccountDetailsState extends State<AccountDetails> {
                           enabled: false,
                           decoration: InputDecoration(
                             label: Text(storedArea,style: const TextStyle(color: Colors.white,fontSize: 20, fontWeight: FontWeight.bold),),
-                            floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade900;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
-                            labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade800;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
                             border: const UnderlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(20.0)),
                               borderSide: BorderSide(width: 1, color: Colors.black),
@@ -249,18 +190,6 @@ class _AccountDetailsState extends State<AccountDetails> {
                           enabled: false,
                           decoration: InputDecoration(
                             label: Text(mosque,style: const TextStyle(color: Colors.white,fontSize: 20, fontWeight: FontWeight.bold),),
-                            floatingLabelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade900;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
-                            labelStyle: MaterialStateTextStyle.resolveWith((Set<MaterialState> states) {
-                              final Color color = states.contains(MaterialState.error)
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.brown.shade800;
-                              return TextStyle(color: color, letterSpacing: 1.3);
-                            }),
                             border: const UnderlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(20.0)),
                               borderSide: BorderSide(width: 1, color: Colors.black),
@@ -277,5 +206,16 @@ class _AccountDetailsState extends State<AccountDetails> {
         ],
       ),
     );
+  }
+
+  @override
+  void initState(){
+    super.initState();
+    setState(() {
+      if(!accFlag){ // add condition if updated
+        showToastMessage();
+        getUserFields(widget.name);
+      }
+    });
   }
 }
