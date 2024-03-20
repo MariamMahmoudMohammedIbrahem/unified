@@ -5,7 +5,6 @@ import 'package:azan/register/signup.dart';
 import 'package:azan/t_key.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -308,35 +307,108 @@ class _LogInState extends State<LogIn> {
     );
   }
   Future<void> _loginUser(BuildContext context) async {
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.brown.shade50,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.brown.shade700,),
-            const SizedBox(height: 16.0),
-            Text(TKeys.logging.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
-          ],
-        ),
-      ),
-    );
 
+    // try {
+    //   FirebaseAuth.instance.signInWithEmailAndPassword(
+    //     email: emailUser,
+    //     password: password,
+    //   ).then((value) async {
+    //     if (rememberPassword) {
+    //       // Store email and password securely
+    //       setCredentials(emailUser, password);
+    //     }
+    //     final userSnapshot = await FirebaseFirestore.instance
+    //         .collection('users')
+    //         .where('user email', isEqualTo: emailUser)
+    //         .get();
+    //     username = userSnapshot.docs.first.id;
+    //   }).then((value) {
+    //     if(username.isNotEmpty){
+    //       Navigator.pushAndRemoveUntil(
+    //         context,
+    //         MaterialPageRoute(
+    //           builder: (context) => ScanningListScreen(userName: username),
+    //         ),
+    //             (route) => false,
+    //       );
+    //     }
+    //   });
+    // }catch (e) {
+    //   setState(() {
+    //     if (e is FirebaseAuthException) {
+    //       switch (e.code) {
+    //         case 'user-not-found':
+    //           errorMessage = 'User not found. Please check your email and try again.';
+    //           break;
+    //         case 'wrong-password':
+    //           errorMessage = 'Invalid password. Please try again.';
+    //           break;
+    //         default:
+    //           errorMessage = 'An error occurred. Please try again later.';
+    //       }
+    //     } else {
+    //       errorMessage = 'An error occurred. Please try again later.';
+    //     }
+    //   });
+    //   // Hide loading dialog
+    //   Navigator.pop(context);
+    //   // Show error dialog
+    //   showDialog(
+    //     context: context,
+    //     builder: (context) => AlertDialog(
+    //       backgroundColor: Colors.brown.shade50,
+    //       title: Text(TKeys.error.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+    //       content: Text(errorMessage , style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+    //       actions: [
+    //         ElevatedButton(
+    //           onPressed: () {
+    //             Navigator.pop(context);
+    //           },
+    //           style: ElevatedButton.styleFrom(
+    //               foregroundColor: Colors.brown,
+    //               backgroundColor: Colors.brown.shade600,
+    //               disabledForegroundColor: Colors.brown.shade600,
+    //               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+    //           child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+    //         ),
+    //       ],
+    //     ),
+    //   );
+    // }
     try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.brown.shade50,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Colors.brown.shade700,),
+              const SizedBox(height: 16.0),
+              Text(TKeys.logging.translate(context), style: TextStyle(fontSize: 17,color: Colors.brown.shade700),),
+            ],
+          ),
+        ),
+      );
       FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailUser,
         password: password,
       ).then((value) async {
+        // Authentication successful
+        if (rememberPassword) {
+          // Store email and password securely
+          await setCredentials(emailUser, password);
+        }
         final userSnapshot = await FirebaseFirestore.instance
             .collection('users')
             .where('user email', isEqualTo: emailUser)
             .get();
         username = userSnapshot.docs.first.id;
-      }).then((value) {
-        if(username.isNotEmpty){
+
+        // Navigate to the next screen
+        if (username.isNotEmpty) {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -345,69 +417,75 @@ class _LogInState extends State<LogIn> {
                 (route) => false,
           );
         }
-      });
-      if (rememberPassword) {
-        // Store email and password securely
-        setCredentials(emailUser, password);
-      }
-      // if (userCredential != null) {
-      //   final userSnapshot = await FirebaseFirestore.instance
-      //       .collection('users')
-      //       .where('user email', isEqualTo: emailUser)
-      //       .get();
-      //
-      //   if (userSnapshot.docs.isNotEmpty) {
-      //     final username = userSnapshot.docs.first.id;
-      //     Navigator.pushAndRemoveUntil(
-      //       context,
-      //       MaterialPageRoute(
-      //         builder: (context) => ScanningListScreen(userName: username),
-      //       ),
-      //           (route) => false,
-      //     );
-      //   } else {
-      //     setState(() {
-      //       notFound = true;
-      //     });
-      //     // Hide loading dialog
-      //     Navigator.pop(context);
-      //   }
-      // }
-    } on FirebaseAuthException catch (e) {
-      // Handle FirebaseAuthException
-      if (kDebugMode) {
-        print('Firebase Auth Error: ${e.code}');
-        print('Firebase Auth Error Message: ${e.message}');
-      } // Print the error code
-      // Hide loading dialog
-      Navigator.pop(context);
-      // Show error dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.brown.shade50,
-          title: Text(TKeys.error.translate(context)),
-          content: Text(TKeys.loginError.translate(context)),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.brown,
-                  backgroundColor: Colors.brown.shade600,
-                  disabledForegroundColor: Colors.brown.shade600,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              child: Text(TKeys.ok.translate(context),style: const TextStyle(color: Colors.white,fontSize: 18),),
+      }).catchError((exception) {
+        // Handle errors from signInWithEmailAndPassword
+        if (exception is FirebaseAuthException) {
+          switch (exception.code) {
+            case 'email-already-in-use':
+              errorMessage = TKeys.emailInUseError.translate(context);
+              break;
+            case 'invalid-email':
+              errorMessage = TKeys.invalidEmailError.translate(context);
+              break;
+            case 'operation-not-allowed':
+              errorMessage = TKeys.operationNotAllowedError.translate(context);
+              break;
+            case 'user-not-found':
+              errorMessage = TKeys.userNotFoundError.translate(context);
+              break;
+            case 'wrong-password':
+              errorMessage = TKeys.wrongPasswordError.translate(context);
+              break;
+            case 'user-disabled':
+              errorMessage = TKeys.userDisabledError.translate(context);
+              break;
+            case 'weak-password':
+              errorMessage = TKeys.weakPasswordError.translate(context);
+              break;
+            case 'too-many-requests':
+              errorMessage = TKeys.tooManyRequestsError.translate(context);
+              break;
+            default:
+              errorMessage = TKeys.defaultError.translate(context);
+          }
+        } else {
+          errorMessage = TKeys.defaultError.translate(context);
+        }
+        Navigator.pop(context);
+        // Show error dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.brown.shade50,
+            title: Text(
+              TKeys.error.translate(context),
+              style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),
             ),
-          ],
-        ),
-      );
-    } catch (e) {
-      // Handle other exceptions
-      if (kDebugMode) {
-        print('Other Error: $e');
-      }
+            content: Text(
+              errorMessage,
+              style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.brown,
+                    backgroundColor: Colors.brown.shade600,
+                    disabledForegroundColor: Colors.brown.shade600,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                child: Text(
+                  TKeys.ok.translate(context),
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+        );
+      });
+    }
+    catch (e) {
       // Hide loading dialog
       Navigator.pop(context);
       // Show error dialog
@@ -415,8 +493,8 @@ class _LogInState extends State<LogIn> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: Colors.brown.shade50,
-          title: const Text('Error', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
-          content: const Text('An unexpected error occurred. Please try again.', style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          title: Text(TKeys.error.translate(context), style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
+          content: Text(TKeys.loginError.translate(context) , style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),),
           actions: [
             TextButton(
               onPressed: () {

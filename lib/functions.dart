@@ -729,16 +729,23 @@ Future<void> updateCitiesAndMosques() async {
 
 //get mosques list based on the city name
 void getMosquesList(String value) async {
-  QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('Cities')
-      .doc(value)
-      .collection('Mosques')
-      .get();
-  if (querySnapshot.docs.isNotEmpty) {
+  try{
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('Cities')
+        .doc(value)
+        .collection('Mosques')
+        .get();
+    if (querySnapshot.docs.isNotEmpty) {
     dataList = querySnapshot.docs.map((doc) => doc.id).toSet();
-  } else {
+    }
+    else {
     dataList = {};
+    }
   }
+  on FirebaseException catch(e){
+    print(e);
+  }
+
 }
 
 Future<void> setCredentials(String email, String password) async {

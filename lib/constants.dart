@@ -130,3 +130,4 @@ late SharedPreferences prefs;
 String prefsPassword = '';
 String prefsEmail = '';
 String usernameAuto = '';
+String errorMessage = '';

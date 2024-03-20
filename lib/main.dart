@@ -1,3 +1,4 @@
+import 'package:azan/login/login.dart';
 import 'package:azan/t_key.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -159,7 +160,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) => Consumer2<BleStatus?, PermissionProvider>(
         builder: (_, status, permission, __) {
           if (status == BleStatus.ready && permission.bluetoothStatus.isGranted && permission.locationStatus.isGranted) {
-            return const AutoLogin();
+            return const LogIn();
           }
           else if(permission.locationStatus.isDenied){
             permission.requestLocationPermission();

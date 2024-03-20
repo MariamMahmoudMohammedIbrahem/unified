@@ -6,7 +6,6 @@ enum TKeys{
   //authorize
   accessLocation,
   accessBluetooth,
-  // authorize,
   //login
   email,
   password,
@@ -18,6 +17,15 @@ enum TKeys{
   noAccount,
   error,
   loginError,
+  emailInUseError,
+  invalidEmailError,
+  operationNotAllowedError,
+  userNotFoundError,
+  wrongPasswordError,
+  userDisabledError,
+  weakPasswordError,
+  tooManyRequestsError,
+  defaultError,
   ok,
   validator,
   //signin
@@ -58,6 +66,7 @@ enum TKeys{
   no,
   confirmExitTitle,
   confirmExitHeadline,
+  disconnectTitle,
   disconnectHeadline,
   dashboard,
   accountDetails,

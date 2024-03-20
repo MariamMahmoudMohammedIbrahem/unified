@@ -808,7 +808,7 @@ class _SettingState extends State<Setting> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             backgroundColor: Colors.brown.shade50,
-            title: Text(TKeys.error.translate(context)),
+            title: Text(TKeys.disconnectTitle.translate(context)),
             content: Text(TKeys.disconnectHeadline.translate(context)),
             actions: [
               ElevatedButton(

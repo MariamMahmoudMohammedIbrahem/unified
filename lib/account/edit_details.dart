@@ -125,13 +125,15 @@ class _AccountEditState extends State<AccountEdit> {
                                   ),
                                 ),
                                 Padding(
-                                  padding:
-                                      EdgeInsets.only(left: width * .05, bottom: 10),
+                                  padding: EdgeInsets.only(
+                                      left: width * .05, bottom: 10),
                                   child: Container(
                                     padding: const EdgeInsets.only(left: 15.0),
                                     decoration: BoxDecoration(
-                                        color: Colors.brown.shade800.withOpacity(0.7),
-                                        borderRadius: BorderRadius.circular(20.0)),
+                                        color: Colors.brown.shade800
+                                            .withOpacity(0.7),
+                                        borderRadius:
+                                            BorderRadius.circular(20.0)),
                                     child: TextFormField(
                                       controller: sheikhNameController,
                                       cursorColor: Colors.white,
@@ -150,10 +152,11 @@ class _AccountEditState extends State<AccountEdit> {
                                           Icons.person,
                                           color: Colors.white,
                                         ),
-                                        errorStyle: TextStyle(color: Colors.white),
+                                        errorStyle:
+                                            TextStyle(color: Colors.white),
                                         border: UnderlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.all(Radius.circular(20.0)),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(20.0)),
                                           borderSide: BorderSide(
                                               width: 1, color: Colors.black),
                                         ),
@@ -179,13 +182,15 @@ class _AccountEditState extends State<AccountEdit> {
                                   ),
                                 ),
                                 Padding(
-                                  padding:
-                                      EdgeInsets.only(left: width * .05, bottom: 10),
+                                  padding: EdgeInsets.only(
+                                      left: width * .05, bottom: 10),
                                   child: Container(
                                     padding: const EdgeInsets.only(left: 15.0),
                                     decoration: BoxDecoration(
-                                        color: Colors.brown.shade800.withOpacity(0.7),
-                                        borderRadius: BorderRadius.circular(20.0)),
+                                        color: Colors.brown.shade800
+                                            .withOpacity(0.7),
+                                        borderRadius:
+                                            BorderRadius.circular(20.0)),
                                     child: TextFormField(
                                       controller: sheikhNumberController,
                                       cursorColor: Colors.white,
@@ -210,10 +215,11 @@ class _AccountEditState extends State<AccountEdit> {
                                           Icons.phone,
                                           color: Colors.white,
                                         ),
-                                        errorStyle: TextStyle(color: Colors.white),
+                                        errorStyle:
+                                            TextStyle(color: Colors.white),
                                         border: UnderlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.all(Radius.circular(20.0)),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(20.0)),
                                           borderSide: BorderSide(
                                               width: 1, color: Colors.black),
                                         ),
@@ -239,13 +245,15 @@ class _AccountEditState extends State<AccountEdit> {
                                   ),
                                 ),
                                 Padding(
-                                  padding:
-                                      EdgeInsets.only(left: width * .05, bottom: 10),
+                                  padding: EdgeInsets.only(
+                                      left: width * .05, bottom: 10),
                                   child: Container(
                                     padding: const EdgeInsets.only(left: 15.0),
                                     decoration: BoxDecoration(
-                                        color: Colors.brown.shade800.withOpacity(0.7),
-                                        borderRadius: BorderRadius.circular(20.0)),
+                                        color: Colors.brown.shade800
+                                            .withOpacity(0.7),
+                                        borderRadius:
+                                            BorderRadius.circular(20.0)),
                                     child: TextFormField(
                                       controller: userEmailController,
                                       keyboardType: TextInputType.emailAddress,
@@ -263,10 +271,11 @@ class _AccountEditState extends State<AccountEdit> {
                                           Icons.email_outlined,
                                           color: Colors.white,
                                         ),
-                                        errorStyle: TextStyle(color: Colors.white),
+                                        errorStyle:
+                                            TextStyle(color: Colors.white),
                                         border: UnderlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.all(Radius.circular(20.0)),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(20.0)),
                                           borderSide: BorderSide(
                                               width: 1, color: Colors.black),
                                         ),
@@ -420,10 +429,11 @@ class _AccountEditState extends State<AccountEdit> {
                                       ),
                                       label: Text(
                                         TKeys.area.translate(context),
-                                        style:
-                                            const TextStyle(color: Colors.white),
+                                        style: const TextStyle(
+                                            color: Colors.white),
                                       ),
-                                      errorStyle: const TextStyle(color: Colors.white),
+                                      errorStyle:
+                                          const TextStyle(color: Colors.white),
                                       border: const UnderlineInputBorder(
                                         borderRadius: BorderRadius.all(
                                             Radius.circular(20.0)),
@@ -578,10 +588,11 @@ class _AccountEditState extends State<AccountEdit> {
                                       ),
                                       label: Text(
                                         TKeys.mosque.translate(context),
-                                        style:
-                                            const TextStyle(color: Colors.white),
+                                        style: const TextStyle(
+                                            color: Colors.white),
                                       ),
-                                      errorStyle: const TextStyle(color: Colors.white),
+                                      errorStyle:
+                                          const TextStyle(color: Colors.white),
                                       border: const UnderlineInputBorder(
                                         borderRadius: BorderRadius.all(
                                             Radius.circular(20.0)),
@@ -630,32 +641,35 @@ class _AccountEditState extends State<AccountEdit> {
                                             ),
                                           );
                                         });
-                                  }
-                                  else {
-                                    if(_formKey.currentState!.validate() && (area.isNotEmpty || areaOther) && (mosque.isNotEmpty || mosqueOther)){
-                                      if(areaOther && mosqueOther){
-                                        if (_formKey1.currentState!.validate() &&
-                                            _formKey2.currentState!.validate()) {
+                                  } else {
+                                    if (_formKey.currentState!.validate() &&
+                                        (area.isNotEmpty || areaOther) &&
+                                        (mosque.isNotEmpty || mosqueOther)) {
+                                      if (areaOther && mosqueOther) {
+                                        if (_formKey1.currentState!
+                                                .validate() &&
+                                            _formKey2.currentState!
+                                                .validate()) {
                                           validate();
                                         }
-                                      }
-                                      else if(areaOther){
-                                        if (_formKey1.currentState!.validate()) {
+                                      } else if (areaOther) {
+                                        if (_formKey1.currentState!
+                                            .validate()) {
                                           validate();
                                         }
-                                      }
-                                      else if (mosqueOther){
-                                        if (_formKey2.currentState!.validate()) {
+                                      } else if (mosqueOther) {
+                                        if (_formKey2.currentState!
+                                            .validate()) {
                                           validate();
                                         }
-                                      }
-                                      else{
+                                      } else {
                                         validate();
                                       }
-                                    }
-                                    else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Please fill input')),
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text('Please fill input')),
                                       );
                                     }
                                   }
@@ -692,6 +706,7 @@ class _AccountEditState extends State<AccountEdit> {
       ),
     );
   }
+
   @override
   void initState() {
     super.initState();
@@ -706,7 +721,8 @@ class _AccountEditState extends State<AccountEdit> {
     userEmailController = TextEditingController(text: email);
     getMosquesList(storedArea);
   }
-  void validate(){
+
+  void validate() {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -721,26 +737,20 @@ class _AccountEditState extends State<AccountEdit> {
             const SizedBox(height: 16.0),
             Text(
               TKeys.updating.translate(context),
-              style: TextStyle(
-                  fontSize: 17,
-                  color: Colors.brown.shade700),
+              style: TextStyle(fontSize: 17, color: Colors.brown.shade700),
             ),
           ],
         ),
       ),
     );
-    if ((updatedSheikhName != sheikhName &&
-        updatedSheikhName.isNotEmpty) ||
+    if ((updatedSheikhName != sheikhName && updatedSheikhName.isNotEmpty) ||
         (updatedSheikhNumber != sheikhPhone &&
             updatedSheikhNumber.isNotEmpty) ||
-        (updatedUserEmail != email &&
-            updatedUserEmail.isNotEmpty)) {
+        (updatedUserEmail != email && updatedUserEmail.isNotEmpty)) {
       updateUserData(userName);
     }
-    if (updatedArea != area &&
-        updatedArea.isNotEmpty) {
-      if (updatedMosque != mosque &&
-          updatedMosque.isNotEmpty) {
+    if (updatedArea != area && updatedArea.isNotEmpty) {
+      if (updatedMosque != mosque && updatedMosque.isNotEmpty) {
         //case mosque and city updated
         updateMosques(userName, 2);
         updateUserColl(userName, 2);
@@ -751,18 +761,23 @@ class _AccountEditState extends State<AccountEdit> {
         updateUserColl(userName, 1);
         updateCitiesAndMosques();
       }
-    }
-    else if (updatedMosque != mosque &&
-        updatedMosque.isNotEmpty) {
+    } else if (updatedMosque != mosque && updatedMosque.isNotEmpty) {
       //case only mosque is updated
       updateMosques(userName, 0);
       updateUserColl(userName, 0);
       updateCitiesAndMosques();
     }
     setState(() {
+      getUserFields(widget.name)
+          .then((value) => Future.delayed(const Duration(seconds: 1))
+              .then((value) => null)
+              .then(
+                (value) => Navigator.pop(context),
+              ))
+          .then(
+            (value) => Navigator.pop(context),
+          );
       accFlag = false;
     });
-    Navigator.pop(context);
-    Navigator.pop(context);
   }
 }
